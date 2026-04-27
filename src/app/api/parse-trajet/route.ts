@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 
 type CulteInput = {
@@ -33,6 +32,10 @@ const JOURS_FR = [
   "vendredi",
   "samedi",
 ];
+
+// Modèle Gemini : "pro-preview" pour précision (thinking model, plus lent/cher),
+// "flash-lite-preview" pour rapidité/coût. Override via env GEMINI_MODEL si besoin.
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-pro-preview";
 
 function isCulteArray(value: unknown): value is CulteInput[] {
   if (!Array.isArray(value)) return false;
@@ -138,8 +141,12 @@ Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans texte avant ou apr�
 - depart_address_text (string) : l'adresse de départ telle qu'écrite par l'utilisateur (ex : "Cocody Riviera 2"). Ne pas géocoder.
 - dates (string[]) : tableau de dates ISO YYYY-MM-DD. Convertis "dimanche prochain", "le suivant", "ce dimanche", etc. en dates absolues à partir de la date du jour. Si l'utilisateur dit "dimanche prochain et le suivant", retourne deux dates.
 
-Si une information n'est pas dans le texte, OMETS le champ. Ne devine pas. Réponds avec uniquement le JSON.`;
+Si une information n'est pas dans le texte, OMETS le champ. Ne devine pas.`;
 }
+
+type GeminiPart = { text?: string };
+type GeminiCandidate = { content?: { parts?: GeminiPart[] } };
+type GeminiResponse = { candidates?: GeminiCandidate[]; error?: { message?: string } };
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -150,7 +157,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     return NextResponse.json({ error: "ai_disabled" }, { status: 503 });
   }
 
@@ -170,60 +178,59 @@ export async function POST(req: NextRequest) {
   }
 
   const cultes = isCulteArray(body.cultes) ? body.cultes : [];
-
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const systemPrompt = buildSystemPrompt(new Date(), cultes);
 
   try {
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 400,
-      system: [
-        {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1,
         },
-      ],
-      messages: [
-        {
-          role: "user",
-          content: text,
-        },
-      ],
+      }),
     });
 
-    const firstBlock = message.content.find((b) => b.type === "text");
-    if (!firstBlock || firstBlock.type !== "text") {
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => null)) as GeminiResponse | null;
       return NextResponse.json(
-        { error: "empty_response" },
+        { error: errBody?.error?.message ?? `gemini_${res.status}` },
         { status: 502 },
       );
     }
 
-    const raw = firstBlock.text.trim();
-    const jsonStart = raw.indexOf("{");
-    const jsonEnd = raw.lastIndexOf("}");
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      return NextResponse.json(
-        { error: "invalid_ai_output" },
-        { status: 502 },
-      );
+    const data = (await res.json()) as GeminiResponse;
+    const raw = data.candidates?.[0]?.content?.parts
+      ?.map((p) => p.text ?? "")
+      .join("")
+      .trim();
+
+    if (!raw) {
+      return NextResponse.json({ error: "empty_response" }, { status: 502 });
     }
 
     let parsedRaw: unknown;
     try {
-      parsedRaw = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+      parsedRaw = JSON.parse(raw);
     } catch {
-      return NextResponse.json(
-        { error: "invalid_ai_output" },
-        { status: 502 },
-      );
+      const start = raw.indexOf("{");
+      const end = raw.lastIndexOf("}");
+      if (start === -1 || end <= start) {
+        return NextResponse.json({ error: "invalid_ai_output" }, { status: 502 });
+      }
+      try {
+        parsedRaw = JSON.parse(raw.slice(start, end + 1));
+      } catch {
+        return NextResponse.json({ error: "invalid_ai_output" }, { status: 502 });
+      }
     }
 
     const validIds = new Set(cultes.map((c) => c.id));
     const parsed = sanitize(parsedRaw, validIds);
-
     return NextResponse.json({ parsed });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "unknown_error";
