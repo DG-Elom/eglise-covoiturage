@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Car, MapPin, Users } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <section className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+        <Logo size="lg" className="mb-6" />
         <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-700">
           <span className="size-1.5 rounded-full bg-emerald-500" />
           Communauté locale

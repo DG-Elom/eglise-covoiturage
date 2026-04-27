@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Mail, Loader2, AlertCircle } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,7 +45,10 @@ export default function LoginPage() {
     <div className="flex min-h-dvh items-center justify-center p-6 bg-slate-50">
       <div className="w-full max-w-sm space-y-8 rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Covoiturage Église</h1>
+          <div className="flex justify-center">
+            <Logo size="lg" />
+          </div>
+          <h1 className="pt-2 text-2xl font-semibold tracking-tight">Covoiturage Église</h1>
           <p className="text-sm text-slate-500">
             Connectez-vous pour proposer ou rejoindre un trajet
           </p>
