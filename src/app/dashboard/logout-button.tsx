@@ -22,7 +22,7 @@ export function LogoutButton() {
       type="button"
       onClick={logout}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
     >
       <LogOut className="size-3.5" />
       Déconnexion

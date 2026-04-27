@@ -24,12 +24,12 @@ export default async function ProfilPage() {
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-6 py-8">
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 transition"
+        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 transition dark:hover:text-slate-100"
       >
         <ArrowLeft className="size-3" /> Dashboard
       </Link>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">Mon profil</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Mets à jour tes informations.
       </p>
       <div className="mt-6">

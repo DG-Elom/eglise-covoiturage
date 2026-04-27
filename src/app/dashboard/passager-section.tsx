@@ -11,12 +11,30 @@ import { confirmToast } from "@/lib/confirm";
 import { ReportButton } from "@/components/report-button";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
-  pending: { label: "En attente", tone: "bg-amber-100 text-amber-800" },
-  accepted: { label: "Acceptée", tone: "bg-emerald-100 text-emerald-800" },
-  refused: { label: "Refusée", tone: "bg-red-100 text-red-800" },
-  cancelled: { label: "Annulée", tone: "bg-slate-100 text-slate-600" },
-  completed: { label: "Terminée", tone: "bg-slate-100 text-slate-600" },
-  no_show: { label: "Non présenté", tone: "bg-red-100 text-red-800" },
+  pending: {
+    label: "En attente",
+    tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  },
+  accepted: {
+    label: "Acceptée",
+    tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+  },
+  refused: {
+    label: "Refusée",
+    tone: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
+  },
+  cancelled: {
+    label: "Annulée",
+    tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  },
+  completed: {
+    label: "Terminée",
+    tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+  },
+  no_show: {
+    label: "Non présenté",
+    tone: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
+  },
 };
 
 export type PassagerReservation = {
@@ -47,7 +65,7 @@ export type PassagerReservation = {
 export function PassagerSection({ reservations }: { reservations: PassagerReservation[] }) {
   if (reservations.length === 0) {
     return (
-      <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+      <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">
         Tu n&apos;as pas encore demandé de trajet.
       </p>
     );
@@ -105,18 +123,18 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
   }
 
   return (
-    <li className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="flex items-start justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
+    <li className="rounded-xl border border-slate-200 bg-white overflow-hidden dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-start justify-between border-b border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
         <div>
           <div className="font-medium">{culte?.libelle ?? "—"}</div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 capitalize">
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 capitalize dark:text-slate-400">
             <Calendar className="size-3" />
             {dateLabel} · {culte?.heure.slice(0, 5)}
-            <span className="text-slate-400">·</span>
+            <span className="text-slate-400 dark:text-slate-500">·</span>
             {reservation.sens === "aller" ? "Aller" : "Retour"}
           </div>
           {trajet?.heure_depart && (
-            <div className="mt-0.5 text-xs text-slate-500">
+            <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               Départ entre <strong>{fenetreDepart(trajet.heure_depart)}</strong>
             </div>
           )}
@@ -130,8 +148,8 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
 
       <div className="space-y-2 px-4 py-3 text-sm">
         {reservation.statut === "accepted" && conducteur && (
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-900">
+          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2 dark:bg-emerald-950/40 dark:border-emerald-800">
+            <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
               <Avatar
                 photoUrl={conducteur.photo_url}
                 prenom={conducteur.prenom}
@@ -146,13 +164,13 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
             <div className="flex flex-wrap gap-2">
               <a
                 href={`tel:${conducteur.telephone}`}
-                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs hover:bg-emerald-50 transition"
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs hover:bg-emerald-50 transition dark:border-emerald-700 dark:bg-slate-900 dark:hover:bg-emerald-950/40"
               >
                 <Phone className="size-3" />
                 {conducteur.telephone}
               </a>
               {conducteur.voiture_modele && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-900">
+                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-900 dark:text-emerald-200">
                   <Car className="size-3" />
                   {conducteur.voiture_modele}
                   {conducteur.voiture_couleur && ` · ${conducteur.voiture_couleur}`}
@@ -168,18 +186,18 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
         )}
 
         {reservation.statut === "pending" && (
-          <p className="flex items-center gap-1.5 text-xs text-amber-800">
+          <p className="flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-300">
             <Clock className="size-3.5" />
             En attente de la réponse du conducteur.
           </p>
         )}
 
-        <div className="text-xs text-slate-500 flex items-start gap-1.5">
+        <div className="text-xs text-slate-500 flex items-start gap-1.5 dark:text-slate-400">
           <MapPin className="size-3.5 mt-0.5 shrink-0" />
           <div>
             <div>Pickup : {reservation.pickup_adresse}</div>
             {trajet?.depart_adresse && (
-              <div className="text-slate-400">
+              <div className="text-slate-400 dark:text-slate-500">
                 Conducteur part de : {trajet.depart_adresse}
               </div>
             )}
@@ -192,7 +210,7 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
               type="button"
               onClick={annuler}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               <X className="size-3" />
               Annuler ma demande

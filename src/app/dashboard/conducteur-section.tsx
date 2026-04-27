@@ -63,7 +63,7 @@ export type ConducteurTrajet = {
 export function ConducteurSection({ trajets }: { trajets: ConducteurTrajet[] }) {
   if (trajets.length === 0) {
     return (
-      <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+      <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">
         Tu n&apos;as pas encore proposé de trajet.
       </p>
     );
@@ -143,16 +143,16 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-medium">{trajet.cultes?.libelle ?? "—"}</span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {trajet.cultes && JOURS[trajet.cultes.jour_semaine]} ·{" "}
               {trajet.cultes?.heure.slice(0, 5)}
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               · {SENS_LABEL[trajet.sens]} · {trajet.places_total} place(s)
             </span>
           </div>
@@ -168,7 +168,7 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
           <Link
             href={`/trajets/${trajet.id}/edit`}
             title="Modifier ce trajet"
-            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition"
+            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
           >
             <Pencil className="size-4" />
           </Link>
@@ -177,14 +177,14 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
             onClick={deleteTrajet}
             disabled={deleting}
             title="Supprimer ce trajet"
-            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition"
+            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
           >
             <Trash2 className="size-4" />
           </button>
         </div>
       </div>
 
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {instances.map((inst) => (
           <InstanceBlock key={inst.id} instance={inst} placesTotal={trajet.places_total} />
         ))}
@@ -262,7 +262,7 @@ function InstanceBlock({
     <div className="px-4 py-3">
       <div className="flex items-center justify-between gap-2 text-sm">
         <span className="flex items-center gap-1.5 font-medium capitalize">
-          <Calendar className="size-3.5 text-slate-400" />
+          <Calendar className="size-3.5 text-slate-400 dark:text-slate-500" />
           {dateLabel}
         </span>
         <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ function InstanceBlock({
             onClick={cancelDate}
             disabled={cancelling}
             title="Annuler cette date"
-            className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 transition"
+            className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-300"
           >
             <CalendarX className="size-3.5" />
           </button>
@@ -282,7 +282,7 @@ function InstanceBlock({
       </div>
 
       {reservations.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-400">Aucune demande pour cette date.</p>
+        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Aucune demande pour cette date.</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {reservations.map((r) => (
@@ -346,7 +346,7 @@ function ReservationRow({
   if (!passager) return null;
 
   return (
-    <li className="rounded-lg border border-slate-200 p-3 text-sm">
+    <li className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex items-start gap-2">
           <Avatar
@@ -375,7 +375,7 @@ function ReservationRow({
               type="button"
               onClick={() => update("refused", "refuse")}
               disabled={loading !== null}
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-50 transition"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
             >
               {loading === "refuse" ? "..." : <X className="size-3.5" />}
             </button>
@@ -389,17 +389,17 @@ function ReservationRow({
             </button>
           </div>
         ) : (
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
             Acceptée
           </span>
         )}
       </div>
 
       {reservation.statut === "accepted" && (
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-2">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
           <a
             href={`tel:${passager.telephone}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
           >
             <Phone className="size-3" />
             {passager.telephone}
@@ -416,7 +416,7 @@ function ReservationRow({
                 type="button"
                 onClick={() => markFinal("completed")}
                 disabled={loading !== null}
-                className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800 hover:bg-emerald-100 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800 hover:bg-emerald-100 disabled:opacity-50 transition dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
               >
                 {loading === "completed" ? "..." : <Check className="size-3" />}
                 Effectué
@@ -425,7 +425,7 @@ function ReservationRow({
                 type="button"
                 onClick={() => markFinal("no_show")}
                 disabled={loading !== null}
-                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-50 transition dark:border-red-800 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/40"
               >
                 {loading === "no_show" ? "..." : <X className="size-3" />}
                 Pas venu

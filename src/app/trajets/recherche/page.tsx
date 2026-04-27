@@ -26,7 +26,7 @@ export default async function RecherchePage() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Trouver un trajet</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Saisis ton adresse et le culte concerné. On te montre les conducteurs
           qui passent près de chez toi.
         </p>

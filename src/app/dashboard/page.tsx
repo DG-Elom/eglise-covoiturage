@@ -6,6 +6,7 @@ import { Avatar } from "@/components/avatar";
 import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
 import { PassagerSection, type PassagerReservation } from "./passager-section";
 import { LogoutButton } from "./logout-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -91,14 +92,14 @@ export default async function DashboardPage() {
           />
           <div>
             <h1 className="text-2xl font-semibold">Bonjour {profile.prenom} 👋</h1>
-            <p className="mt-1 text-sm text-slate-600">{user.email}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {profile.is_admin && (
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 hover:bg-emerald-100 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 hover:bg-emerald-100 transition dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
             >
               <ShieldCheck className="size-3.5" />
               Admin
@@ -106,12 +107,13 @@ export default async function DashboardPage() {
           )}
           <Link
             href="/profil"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <User className="size-3.5" />
             Profil
           </Link>
           <LogoutButton />
+          <ThemeToggle />
         </div>
       </header>
 
@@ -137,7 +139,7 @@ export default async function DashboardPage() {
       {peutConduire && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Car className="size-5 text-emerald-600" />
+            <Car className="size-5 text-emerald-600 dark:text-emerald-400" />
             Mes trajets proposés
           </h2>
           <ConducteurSection trajets={mesTrajets} />
@@ -147,7 +149,7 @@ export default async function DashboardPage() {
       {peutVoyager && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Search className="size-5 text-emerald-600" />
+            <Search className="size-5 text-emerald-600 dark:text-emerald-400" />
             Mes demandes de trajet
           </h2>
           <PassagerSection reservations={mesReservations} />
@@ -170,14 +172,14 @@ function ActionCard({
 }) {
   const styles =
     tone === "emerald"
-      ? "border-emerald-200 bg-emerald-50 hover:border-emerald-400 text-emerald-900"
-      : "border-slate-200 bg-white hover:border-slate-400";
+      ? "border-emerald-200 bg-emerald-50 hover:border-emerald-400 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:border-emerald-600"
+      : "border-slate-200 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-500";
   return (
     <Link
       href={href}
       className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${styles}`}
     >
-      <div className="inline-flex size-9 items-center justify-center rounded-lg bg-white shadow-sm">
+      <div className="inline-flex size-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
         {icon}
       </div>
       <span className="font-medium">{title}</span>

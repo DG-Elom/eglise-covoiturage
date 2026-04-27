@@ -222,16 +222,16 @@ export function EditTrajetForm({
         {!editingAdresse ? (
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2">
-              <MapPin className="size-4 text-slate-400 mt-0.5 shrink-0" />
+              <MapPin className="size-4 text-slate-400 mt-0.5 shrink-0 dark:text-slate-500" />
               <div>
-                <p className="text-xs text-slate-500">Adresse actuelle</p>
-                <p className="text-sm text-slate-800">{trajet.depart_adresse}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Adresse actuelle</p>
+                <p className="text-sm text-slate-800 dark:text-slate-200">{trajet.depart_adresse}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setEditingAdresse(true)}
-              className="text-xs font-medium text-emerald-700 hover:underline shrink-0"
+              className="text-xs font-medium text-emerald-700 hover:underline shrink-0 dark:text-emerald-400"
             >
               Changer
             </button>
@@ -250,7 +250,7 @@ export function EditTrajetForm({
                   setEditingAdresse(false);
                   setAdresse(null);
                 }}
-                className="text-xs font-medium text-slate-500 hover:underline"
+                className="text-xs font-medium text-slate-500 hover:underline dark:text-slate-400"
               >
                 Annuler le changement
               </button>
@@ -271,12 +271,12 @@ export function EditTrajetForm({
       </Section>
 
       <Section title="Programme">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm opacity-80">
-          <div className="font-medium text-slate-800">{culte.libelle}</div>
-          <div className="text-xs text-slate-500 mt-0.5">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm opacity-80 dark:border-slate-700 dark:bg-slate-950">
+          <div className="font-medium text-slate-800 dark:text-slate-200">{culte.libelle}</div>
+          <div className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
             {JOURS[culte.jour_semaine]} · {culte.heure.slice(0, 5)}
           </div>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             Le programme ne peut pas être modifié sur un trajet existant.
           </p>
         </div>
@@ -294,7 +294,7 @@ export function EditTrajetForm({
               <button
                 type="button"
                 onClick={toggleAllDates}
-                className="text-xs font-medium text-emerald-700 hover:underline"
+                className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
               >
                 {datesSelected.size === allDateStrings.length
                   ? "Tout décocher"
@@ -310,8 +310,8 @@ export function EditTrajetForm({
                     key={ds}
                     className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                       checked
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                        : "border-slate-200 hover:border-slate-300"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                        : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
                     }`}
                   >
                     <input
@@ -342,8 +342,8 @@ export function EditTrajetForm({
               key={s.v}
               className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                 sens === s.v
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
               }`}
             >
               <input
@@ -361,7 +361,7 @@ export function EditTrajetForm({
 
       <Section title="Heure de départ">
         <label className="block">
-          <span className="text-xs font-medium text-slate-700">
+          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
             Tu pars de chez toi vers
           </span>
           <input
@@ -369,7 +369,7 @@ export function EditTrajetForm({
             value={heureDepart}
             onChange={(e) => setHeureDepart(e.target.value)}
             step={300}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm sm:w-40"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm sm:w-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
           <p className="mt-1.5 text-xs text-slate-500">
             Les passagers verront que tu pars entre <strong>{heureDepart}</strong>{" "}
@@ -381,7 +381,7 @@ export function EditTrajetForm({
       <Section title="Détails">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Places disponibles
             </span>
             <input
@@ -390,11 +390,11 @@ export function EditTrajetForm({
               max={8}
               value={places}
               onChange={(e) => setPlaces(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Rayon de détour : <strong>{rayon} km</strong>
             </span>
             <input
@@ -406,7 +406,7 @@ export function EditTrajetForm({
               onChange={(e) => setRayon(Number(e.target.value))}
               className="mt-2 w-full"
             />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+            <div className="flex justify-between text-[10px] text-slate-400 mt-0.5 dark:text-slate-500">
               <span>0.5 km</span>
               <span>5 km</span>
             </div>
@@ -417,7 +417,7 @@ export function EditTrajetForm({
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
       >
         {loading ? (
           <Loader2 className="size-4 animate-spin" />
@@ -438,8 +438,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-medium text-slate-700">{title}</h2>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">{title}</h2>
       {children}
     </div>
   );

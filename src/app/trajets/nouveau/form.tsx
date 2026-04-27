@@ -4,12 +4,22 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Map } from "@/components/map";
-import type { GeocodeResult } from "@/lib/mapbox";
+import { geocodeAddress, type GeocodeResult } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { addMinutes } from "@/lib/time";
+
+type ParsedTrajet = {
+  culte_id?: string | null;
+  heure_depart?: string;
+  places_total?: number;
+  sens?: "aller" | "retour" | "aller_retour";
+  rayon_detour_km?: number;
+  depart_address_text?: string;
+  dates?: string[];
+};
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
@@ -39,6 +49,8 @@ export function NouveauTrajetForm({
   const [rayon, setRayon] = useState(3);
   const [heureDepart, setHeureDepart] = useState("08:00");
   const [datesSelected, setDatesSelected] = useState<Set<string>>(new Set());
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = useMemo(
@@ -97,6 +109,100 @@ export function NouveauTrajetForm({
     router.refresh();
   }
 
+  async function handleAiPrefill() {
+    const text = aiText.trim();
+    if (text.length === 0) {
+      toast.error("Décris ton trajet avant de cliquer.");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/parse-trajet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, cultes }),
+      });
+      const data: { parsed?: ParsedTrajet; error?: string } = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 503 || data.error === "ai_disabled") {
+          toast.error("L'IA n'est pas configurée.");
+        } else {
+          toast.error(data.error ?? "Erreur lors de l'analyse.");
+        }
+        return;
+      }
+
+      const parsed = data.parsed;
+      if (!parsed) {
+        toast.error("Aucune information extraite.");
+        return;
+      }
+
+      let activeCulteId = culteId;
+      if (parsed.culte_id && cultes.some((c) => c.id === parsed.culte_id)) {
+        activeCulteId = parsed.culte_id;
+        setCulteId(parsed.culte_id);
+      }
+
+      if (parsed.heure_depart) setHeureDepart(parsed.heure_depart);
+      if (typeof parsed.places_total === "number") {
+        setPlaces(Math.min(8, Math.max(1, parsed.places_total)));
+      }
+      if (parsed.sens) setSens(parsed.sens);
+      if (typeof parsed.rayon_detour_km === "number") {
+        setRayon(Math.min(5, Math.max(0.5, parsed.rayon_detour_km)));
+      }
+
+      if (parsed.dates && parsed.dates.length > 0) {
+        const activeCulte = cultes.find((c) => c.id === activeCulteId);
+        if (activeCulte) {
+          const slots = new Set(
+            nextOccurrences(activeCulte.jour_semaine, 8).map(toDateString),
+          );
+          const next = new Set(datesSelected);
+          let added = 0;
+          for (const d of parsed.dates) {
+            if (slots.has(d)) {
+              next.add(d);
+              added++;
+            }
+          }
+          if (added > 0) {
+            setDatesSelected(next);
+          } else {
+            toast.message(
+              "Les dates détectées ne correspondent pas au programme. Coche-les manuellement.",
+            );
+          }
+        }
+      }
+
+      if (parsed.depart_address_text) {
+        try {
+          const results = await geocodeAddress(parsed.depart_address_text);
+          if (results.length > 0) {
+            setAdresse(results[0]);
+          } else {
+            toast.message(
+              "Adresse non trouvée automatiquement. Choisis-la manuellement.",
+            );
+          }
+        } catch {
+          toast.message(
+            "Adresse non trouvée automatiquement. Choisis-la manuellement.",
+          );
+        }
+      }
+
+      toast.success("Formulaire pré-rempli !");
+    } catch {
+      toast.error("Erreur réseau lors de l'analyse.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   function toggleDate(d: string) {
     setDatesSelected((prev) => {
       const next = new Set(prev);
@@ -116,6 +222,38 @@ export function NouveauTrajetForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-slate-900">
+        <h2 className="mb-1 flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-200">
+          <Sparkles className="size-4" />
+          Saisie rapide avec l&apos;IA
+        </h2>
+        <p className="mb-3 text-xs text-slate-600 dark:text-slate-400">
+          Décris ton trajet en une phrase, l&apos;IA pré-remplit le formulaire.
+        </p>
+        <textarea
+          value={aiText}
+          onChange={(e) => setAiText(e.target.value)}
+          rows={3}
+          placeholder="Ex: Je pars dimanche matin de Cocody Riviera vers 8h30, j'ai 3 places…"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleAiPrefill}
+            disabled={aiLoading || aiText.trim().length === 0}
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          >
+            {aiLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            Pré-remplir
+          </button>
+        </div>
+      </div>
+
       <Section title="Point de départ">
         <AddressAutocomplete
           value={adresse}
@@ -140,8 +278,8 @@ export function NouveauTrajetForm({
               key={c.id}
               className={`cursor-pointer rounded-lg border px-3 py-3 text-sm transition ${
                 culteId === c.id
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40"
+                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
               }`}
             >
               <input
@@ -161,7 +299,7 @@ export function NouveauTrajetForm({
             </label>
           ))}
           {cultes.length === 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
               Aucun programme configuré. Contacte l&apos;admin.
             </div>
           )}
@@ -180,7 +318,7 @@ export function NouveauTrajetForm({
               <button
                 type="button"
                 onClick={toggleAllDates}
-                className="text-xs font-medium text-emerald-700 hover:underline"
+                className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
               >
                 {datesSelected.size === dates.length ? "Tout décocher" : "Tout cocher"}
               </button>
@@ -194,8 +332,8 @@ export function NouveauTrajetForm({
                     key={ds}
                     className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                       checked
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                        : "border-slate-200 hover:border-slate-300"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                        : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
                     }`}
                   >
                     <input
@@ -226,8 +364,8 @@ export function NouveauTrajetForm({
               key={s.v}
               className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                 sens === s.v
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
               }`}
             >
               <input
@@ -245,7 +383,7 @@ export function NouveauTrajetForm({
 
       <Section title="Heure de départ">
         <label className="block">
-          <span className="text-xs font-medium text-slate-700">
+          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
             Tu pars de chez toi vers
           </span>
           <input
@@ -253,7 +391,7 @@ export function NouveauTrajetForm({
             value={heureDepart}
             onChange={(e) => setHeureDepart(e.target.value)}
             step={300}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm sm:w-40"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm sm:w-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
           <p className="mt-1.5 text-xs text-slate-500">
             Les passagers verront que tu pars entre <strong>{heureDepart}</strong> et{" "}
@@ -265,7 +403,7 @@ export function NouveauTrajetForm({
       <Section title="Détails">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Places disponibles
             </span>
             <input
@@ -274,11 +412,11 @@ export function NouveauTrajetForm({
               max={8}
               value={places}
               onChange={(e) => setPlaces(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Rayon de détour : <strong>{rayon} km</strong>
             </span>
             <input
@@ -290,7 +428,7 @@ export function NouveauTrajetForm({
               onChange={(e) => setRayon(Number(e.target.value))}
               className="mt-2 w-full"
             />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+            <div className="flex justify-between text-[10px] text-slate-400 mt-0.5 dark:text-slate-500">
               <span>0.5 km</span>
               <span>5 km</span>
             </div>
@@ -301,7 +439,7 @@ export function NouveauTrajetForm({
       <button
         type="submit"
         disabled={loading || !adresse}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
       >
         {loading && <Loader2 className="size-4 animate-spin" />}
         Créer le trajet
@@ -312,8 +450,8 @@ export function NouveauTrajetForm({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-medium text-slate-700">{title}</h2>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">{title}</h2>
       {children}
     </div>
   );

@@ -42,20 +42,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center p-6 bg-slate-50">
-      <div className="w-full max-w-sm space-y-8 rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
+    <div className="flex min-h-dvh items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
+      <div className="w-full max-w-sm space-y-8 rounded-2xl bg-white p-8 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
         <div className="space-y-2 text-center">
           <div className="flex justify-center">
             <Logo size="lg" />
           </div>
           <h1 className="pt-2 text-2xl font-semibold tracking-tight">Covoiturage Église</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Connectez-vous pour proposer ou rejoindre un trajet
           </p>
         </div>
 
         {!configured && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             <AlertCircle className="size-4 mt-0.5 shrink-0" />
             <span>
               Configuration manquante. Renseignez <code>NEXT_PUBLIC_SUPABASE_URL</code> et{" "}
@@ -68,7 +68,7 @@ export default function LoginPage() {
           type="button"
           onClick={signInWithGoogle}
           disabled={loading !== null || !configured}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
         >
           {loading === "google" ? (
             <Loader2 className="size-4 animate-spin" />
@@ -80,10 +80,10 @@ export default function LoginPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-slate-200" />
+            <span className="w-full border-t border-slate-200 dark:border-slate-700" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-2 text-slate-500">ou par email</span>
+            <span className="bg-white px-2 text-slate-500 dark:bg-slate-900 dark:text-slate-400">ou par email</span>
           </div>
         </div>
 
@@ -94,12 +94,12 @@ export default function LoginPage() {
             placeholder="vous@exemple.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-400 focus:outline-none"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
           />
           <button
             type="submit"
             disabled={loading !== null || !email || !configured}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             {loading === "email" ? (
               <Loader2 className="size-4 animate-spin" />
@@ -110,7 +110,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500">
           En continuant, vous acceptez la charte de la communauté.
         </p>
       </div>

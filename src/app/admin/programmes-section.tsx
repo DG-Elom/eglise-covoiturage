@@ -31,14 +31,14 @@ export function ProgrammesSection({ programmes }: { programmes: Programme[] }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-slate-700 uppercase tracking-wide">
+        <h2 className="text-sm font-medium text-slate-700 uppercase tracking-wide dark:text-slate-300">
           Programmes
         </h2>
         {!adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition dark:hover:bg-emerald-500"
           >
             <Plus className="size-3.5" />
             Nouveau
@@ -52,7 +52,7 @@ export function ProgrammesSection({ programmes }: { programmes: Programme[] }) {
           <Row key={p.id} programme={p} />
         ))}
         {programmes.length === 0 && !adding && (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">
             Aucun programme. Clique sur &laquo; Nouveau &raquo;.
           </p>
         )}
@@ -91,7 +91,7 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
   }
 
   return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
       <div className="grid gap-2 sm:grid-cols-[1fr,auto,auto,auto]">
         <input
           type="text"
@@ -99,12 +99,12 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
           placeholder="Ex : Culte du dimanche matin"
           value={libelle}
           onChange={(e) => setLibelle(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
         />
         <select
           value={jour}
           onChange={(e) => setJour(Number(e.target.value))}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         >
           {JOURS.map((j, i) => (
             <option key={j} value={i}>
@@ -117,14 +117,14 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
           value={heure}
           onChange={(e) => setHeure(e.target.value)}
           step={300}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         />
         <div className="flex gap-1">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs hover:bg-slate-50 transition"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
           >
             Annuler
           </button>
@@ -132,7 +132,7 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
             type="button"
             onClick={save}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition dark:hover:bg-emerald-500"
           >
             {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
             Créer
@@ -213,18 +213,18 @@ function Row({ programme }: { programme: Programme }) {
 
   if (editing) {
     return (
-      <div className="rounded-xl border border-slate-300 bg-white p-3">
+      <div className="rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-600 dark:bg-slate-900">
         <div className="grid gap-2 sm:grid-cols-[1fr,auto,auto,auto]">
           <input
             type="text"
             value={libelle}
             onChange={(e) => setLibelle(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-500"
           />
           <select
             value={jour}
             onChange={(e) => setJour(Number(e.target.value))}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             {JOURS.map((j, i) => (
               <option key={j} value={i}>
@@ -237,14 +237,14 @@ function Row({ programme }: { programme: Programme }) {
             value={heure}
             onChange={(e) => setHeure(e.target.value)}
             step={300}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
           <div className="flex gap-1">
             <button
               type="button"
               onClick={() => setEditing(false)}
               disabled={loading}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-xs hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
             >
               Annuler
             </button>
@@ -252,7 +252,7 @@ function Row({ programme }: { programme: Programme }) {
               type="button"
               onClick={save}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
               Enregistrer
@@ -265,8 +265,10 @@ function Row({ programme }: { programme: Programme }) {
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-xl border bg-white p-3 ${
-        programme.actif ? "border-slate-200" : "border-slate-200 opacity-60"
+      className={`flex items-center justify-between gap-3 rounded-xl border bg-white p-3 dark:bg-slate-900 ${
+        programme.actif
+          ? "border-slate-200 dark:border-slate-700"
+          : "border-slate-200 opacity-60 dark:border-slate-700"
       }`}
     >
       <button
@@ -275,7 +277,7 @@ function Row({ programme }: { programme: Programme }) {
         className="flex-1 min-w-0 text-left"
       >
         <div className="font-medium">{programme.libelle}</div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-500 dark:text-slate-400">
           {JOURS[programme.jour_semaine]} · {programme.heure.slice(0, 5)}
         </div>
       </button>
@@ -286,8 +288,8 @@ function Row({ programme }: { programme: Programme }) {
           title={programme.actif ? "Désactiver" : "Activer"}
           className={`inline-flex size-7 items-center justify-center rounded-md transition ${
             programme.actif
-              ? "text-emerald-600 hover:bg-emerald-50"
-              : "text-slate-400 hover:bg-slate-50"
+              ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+              : "text-slate-400 hover:bg-slate-50 dark:text-slate-500 dark:hover:bg-slate-800"
           }`}
         >
           <Power className="size-4" />
@@ -296,7 +298,7 @@ function Row({ programme }: { programme: Programme }) {
           type="button"
           onClick={remove}
           title="Supprimer"
-          className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+          className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
         >
           <Trash2 className="size-4" />
         </button>

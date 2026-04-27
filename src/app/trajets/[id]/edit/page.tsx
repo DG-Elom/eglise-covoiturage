@@ -68,7 +68,7 @@ export default async function EditTrajetPage({
         <h1 className="text-2xl font-semibold tracking-tight">
           Modifier le trajet
         </h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Mets à jour les informations de ton trajet. Les passagers concernés
           seront prévenus si tu retires des dates.
         </p>

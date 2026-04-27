@@ -117,8 +117,8 @@ export function RechercheForm({
                 key={c.id}
                 className={`cursor-pointer rounded-lg border px-3 py-3 text-sm transition ${
                   culteId === c.id
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40"
+                    : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
                 }`}
               >
                 <input
@@ -147,8 +147,8 @@ export function RechercheForm({
                 key={s}
                 className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                   sens === s
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                    : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
                 }`}
               >
                 <input
@@ -176,8 +176,8 @@ export function RechercheForm({
                     key={ds}
                     className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
                       date === ds
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                        : "border-slate-200 hover:border-slate-300"
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                        : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
                     }`}
                   >
                     <input
@@ -198,7 +198,7 @@ export function RechercheForm({
         <button
           type="submit"
           disabled={loading || !adresse || !culteId || !date}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
           Rechercher
@@ -233,8 +233,8 @@ function Resultats({
 
   if (results.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center">
-        <p className="text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           Aucun trajet trouvé pour cette date.
         </p>
         <p className="mt-1 text-xs text-slate-500">
@@ -261,7 +261,7 @@ function Resultats({
 
       {dansZone.length > 0 ? (
         <>
-          <h2 className="text-sm font-medium text-slate-700">
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">
             {dansZone.length} trajet{dansZone.length > 1 ? "s" : ""} sur ton chemin
           </h2>
           <ul className="space-y-3">
@@ -276,7 +276,7 @@ function Resultats({
           </ul>
         </>
       ) : (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <p className="font-medium">Aucun trajet ne passe directement par chez toi.</p>
           <p className="mt-1">
             Voici les conducteurs les plus proches qui pourraient peut-être faire un détour.
@@ -287,7 +287,7 @@ function Resultats({
 
       {horsZone.length > 0 && (
         <>
-          <h2 className="text-sm font-medium text-slate-700 pt-2">
+          <h2 className="text-sm font-medium text-slate-700 pt-2 dark:text-slate-300">
             {dansZone.length > 0 ? "Trajets plus éloignés" : "Trajets les plus proches"}
           </h2>
           <ul className="space-y-3">
@@ -320,8 +320,10 @@ function TrajetItem({
 }) {
   return (
     <li
-      className={`rounded-xl border bg-white p-4 ${
-        outOfZone ? "border-amber-200" : "border-slate-200"
+      className={`rounded-xl border bg-white p-4 dark:bg-slate-900 ${
+        outOfZone
+          ? "border-amber-200 dark:border-amber-800"
+          : "border-slate-200 dark:border-slate-700"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -335,7 +337,7 @@ function TrajetItem({
             />
             <span className="font-medium">{trajet.conducteur_prenom}</span>
             {outOfZone && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 hors zone
               </span>
             )}
@@ -344,15 +346,15 @@ function TrajetItem({
             <MapPin className="size-3" />
             <span className="truncate">{trajet.depart_adresse}</span>
           </div>
-          <div className="mt-1 text-xs text-slate-600">
+          <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             Départ entre <strong>{fenetreDepart(trajet.heure_depart)}</strong>
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-xs">
-            <span className="inline-flex items-center gap-1 text-slate-700">
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
               <Users className="size-3" /> {trajet.places_restantes} place
               {trajet.places_restantes > 1 ? "s" : ""}
             </span>
-            <span className={outOfZone ? "text-amber-700" : "text-slate-500"}>
+            <span className={outOfZone ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}>
               Détour : {trajet.detour_km} km
             </span>
           </div>
@@ -361,7 +363,7 @@ function TrajetItem({
           type="button"
           onClick={() => onReserve(trajet)}
           disabled={reserving !== null}
-          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition shrink-0"
+          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition shrink-0 dark:hover:bg-emerald-500"
         >
           {reserving === trajet.trajet_instance_id ? (
             <Loader2 className="size-4 animate-spin" />
@@ -376,8 +378,8 @@ function TrajetItem({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-medium text-slate-700">{title}</h2>
+    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">{title}</h2>
       {children}
     </div>
   );

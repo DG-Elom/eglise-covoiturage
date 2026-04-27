@@ -33,13 +33,13 @@ export function Avatar({
       <img
         src={photoUrl}
         alt={`${prenom ?? ""} ${nom ?? ""}`.trim() || "Avatar"}
-        className={`${sizeCls} rounded-full object-cover bg-slate-100 ${className}`}
+        className={`${sizeCls} rounded-full object-cover bg-slate-100 ${className} dark:bg-slate-800`}
       />
     );
   }
   return (
     <div
-      className={`${sizeCls} rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-medium ${className}`}
+      className={`${sizeCls} rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-medium ${className} dark:bg-emerald-900/40 dark:text-emerald-200`}
     >
       {initiales(prenom, nom)}
     </div>
