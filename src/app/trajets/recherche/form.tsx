@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ export function RechercheForm({
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = culte ? nextOccurrences(culte.jour_semaine, 4) : [];
+  const todayStr = useMemo(() => toDateString(new Date()), []);
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -168,30 +169,52 @@ export function RechercheForm({
           {dates.length === 0 ? (
             <p className="text-sm text-slate-500">Choisis d&apos;abord un programme.</p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-4">
-              {dates.map((d) => {
-                const ds = toDateString(d);
-                return (
-                  <label
-                    key={ds}
-                    className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
-                      date === ds
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
-                        : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="date"
-                      checked={date === ds}
-                      onChange={() => setDate(ds)}
-                      className="sr-only"
-                    />
-                    {formatDateShort(d)}
-                  </label>
-                );
-              })}
-            </div>
+            <>
+              <div className="grid gap-2 sm:grid-cols-4">
+                {dates.map((d) => {
+                  const ds = toDateString(d);
+                  return (
+                    <label
+                      key={ds}
+                      className={`cursor-pointer rounded-lg border px-3 py-2 text-center text-sm transition ${
+                        date === ds
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                          : "border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="date"
+                        checked={date === ds}
+                        onChange={() => setDate(ds)}
+                        className="sr-only"
+                      />
+                      {formatDateShort(d)}
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Ou choisis une autre date
+                </label>
+                <input
+                  type="date"
+                  min={todayStr}
+                  value={
+                    date && !dates.some((d) => toDateString(d) === date) ? date : ""
+                  }
+                  onChange={(e) => setDate(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-500"
+                />
+                {date && !dates.some((d) => toDateString(d) === date) && (
+                  <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+                    Date sélectionnée : {formatDateShort(new Date(`${date}T12:00:00`))}
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </Section>
 

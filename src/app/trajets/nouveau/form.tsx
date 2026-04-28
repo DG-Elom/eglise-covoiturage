@@ -54,9 +54,10 @@ export function NouveauTrajetForm({
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = useMemo(
-    () => (culte ? nextOccurrences(culte.jour_semaine, 8) : []),
+    () => (culte ? nextOccurrences(culte.jour_semaine, 4) : []),
     [culte],
   );
+  const todayStr = useMemo(() => toDateString(new Date()), []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,7 +159,7 @@ export function NouveauTrajetForm({
         const activeCulte = cultes.find((c) => c.id === activeCulteId);
         if (activeCulte) {
           const slots = new Set(
-            nextOccurrences(activeCulte.jour_semaine, 8).map(toDateString),
+            nextOccurrences(activeCulte.jour_semaine, 4).map(toDateString),
           );
           const next = new Set(datesSelected);
           let added = 0;
@@ -346,6 +347,50 @@ export function NouveauTrajetForm({
                   </label>
                 );
               })}
+            </div>
+
+            <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                Ajouter une autre date
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="date"
+                  min={todayStr}
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-500"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v && v >= todayStr) {
+                      const next = new Set(datesSelected);
+                      next.add(v);
+                      setDatesSelected(next);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </div>
+              {datesSelected.size > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Array.from(datesSelected)
+                    .sort()
+                    .map((ds) => (
+                      <span
+                        key={ds}
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                      >
+                        {formatDateShort(new Date(`${ds}T12:00:00`))}
+                        <button
+                          type="button"
+                          onClick={() => toggleDate(ds)}
+                          className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+                          aria-label="Retirer cette date"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                </div>
+              )}
             </div>
           </>
         )}
