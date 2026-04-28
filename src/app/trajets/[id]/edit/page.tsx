@@ -82,23 +82,24 @@ export default async function EditTrajetPage({
           seront prévenus si tu retires des dates.
         </p>
         <EditTrajetForm
-        trajet={{
-          id: trajet.id,
-          depart_adresse: trajet.depart_adresse,
-          sens: trajet.sens,
-          places_total: trajet.places_total,
-          rayon_detour_km: trajet.rayon_detour_km,
-          heure_depart: trajet.heure_depart,
-          culte_id: trajet.culte_id,
-        }}
-        culte={{
-          libelle: culte.libelle,
-          jour_semaine: culte.jour_semaine,
-          heure: culte.heure,
-        }}
-        instances={instances ?? []}
-        reservations={reservations ?? []}
-      />
+          trajet={{
+            id: trajet.id,
+            depart_adresse: trajet.depart_adresse,
+            sens: trajet.sens,
+            places_total: trajet.places_total,
+            rayon_detour_km: trajet.rayon_detour_km,
+            heure_depart: trajet.heure_depart,
+            culte_id: trajet.culte_id,
+          }}
+          culte={{
+            libelle: culte.libelle,
+            jour_semaine: culte.jour_semaine,
+            heure: culte.heure,
+          }}
+          instances={instances ?? []}
+          reservations={reservations ?? []}
+          eglisePos={{ lat: 49.146943, lng: 6.175955 }}
+        />
       </main>
     </>
   );

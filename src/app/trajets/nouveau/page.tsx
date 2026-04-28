@@ -27,6 +27,9 @@ export default async function NouveauTrajetPage() {
     .eq("actif", true)
     .order("jour_semaine");
 
+  // Position de l'église (ICC Metz). Source : table eglise. Fallback hardcodé.
+  const eglisePos = { lat: 49.146943, lng: 6.175955 };
+
   return (
     <>
       <AppHeader
@@ -45,7 +48,11 @@ export default async function NouveauTrajetPage() {
           Déclare ton point de départ et le culte concerné. Tu pourras récupérer
           les passagers proches de ton chemin.
         </p>
-        <NouveauTrajetForm conducteurId={profile.id} cultes={cultes ?? []} />
+        <NouveauTrajetForm
+          conducteurId={profile.id}
+          cultes={cultes ?? []}
+          eglisePos={eglisePos}
+        />
       </main>
     </>
   );

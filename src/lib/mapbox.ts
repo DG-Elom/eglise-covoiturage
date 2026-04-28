@@ -20,6 +20,46 @@ export async function reverseGeocode(
   return { id: f.id, address: f.place_name, lat, lng };
 }
 
+export type RouteResult = {
+  geometry: { type: "LineString"; coordinates: [number, number][] };
+  durationSec: number;
+  distanceKm: number;
+};
+
+export async function getDrivingRoute(
+  origin: { lat: number; lng: number },
+  dest: { lat: number; lng: number },
+): Promise<RouteResult | null> {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (!token) return null;
+
+  const url =
+    `https://api.mapbox.com/directions/v5/mapbox/driving/` +
+    `${origin.lng},${origin.lat};${dest.lng},${dest.lat}` +
+    `?access_token=${token}&geometries=geojson&overview=full&language=fr`;
+
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const route = data.routes?.[0];
+  if (!route) return null;
+
+  return {
+    geometry: route.geometry as { type: "LineString"; coordinates: [number, number][] },
+    durationSec: route.duration as number,
+    distanceKm: (route.distance as number) / 1000,
+  };
+}
+
+export async function getDrivingDuration(
+  origin: { lat: number; lng: number },
+  dest: { lat: number; lng: number },
+): Promise<number | null> {
+  const result = await getDrivingRoute(origin, dest);
+  return result ? result.durationSec : null;
+}
+
 export async function geocodeAddress(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token || query.trim().length < 3) return [];

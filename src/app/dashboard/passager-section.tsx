@@ -7,7 +7,7 @@ import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle } from "lu
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
-import { fenetreDepart } from "@/lib/time";
+
 import { confirmToast } from "@/lib/confirm";
 import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
@@ -138,7 +138,7 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
           </div>
           {trajet?.heure_depart && (
             <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Départ entre <strong>{fenetreDepart(trajet.heure_depart)}</strong>
+              Départ à <strong>{trajet.heure_depart.slice(0, 5)}</strong>
             </div>
           )}
         </div>

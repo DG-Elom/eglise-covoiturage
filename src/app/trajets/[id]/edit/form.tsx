@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Save, MapPin } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Map } from "@/components/map";
-import type { GeocodeResult } from "@/lib/mapbox";
+import { getDrivingRoute, type GeocodeResult, type RouteResult } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { addMinutes } from "@/lib/time";
 import { notify } from "@/lib/notify";
@@ -47,11 +47,13 @@ export function EditTrajetForm({
   culte,
   instances,
   reservations,
+  eglisePos,
 }: {
   trajet: TrajetProp;
   culte: CulteProp;
   instances: InstanceProp[];
   reservations: ReservationProp[];
+  eglisePos: { lat: number; lng: number };
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -59,10 +61,34 @@ export function EditTrajetForm({
 
   const [editingAdresse, setEditingAdresse] = useState(false);
   const [adresse, setAdresse] = useState<GeocodeResult | null>(null);
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
   const [sens, setSens] = useState<Sens>(trajet.sens);
   const [places, setPlaces] = useState(trajet.places_total);
   const [rayon, setRayon] = useState(trajet.rayon_detour_km);
   const [heureDepart, setHeureDepart] = useState(trajet.heure_depart.slice(0, 5));
+
+  useEffect(() => {
+    if (!adresse) {
+      setRoute(null);
+      return;
+    }
+    let cancelled = false;
+    setRouteLoading(true);
+    getDrivingRoute({ lat: adresse.lat, lng: adresse.lng }, eglisePos)
+      .then((r) => {
+        if (!cancelled) setRoute(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRoute(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [adresse, eglisePos]);
 
   const existingDateStrings = useMemo(
     () => new Set(instances.map((i) => i.date.slice(0, 10))),
@@ -126,6 +152,7 @@ export function EditTrajetForm({
       heure_depart: string;
       depart_adresse?: string;
       depart_position?: string;
+      trajet_ligne?: string;
     } = {
       sens,
       places_total: places,
@@ -135,6 +162,12 @@ export function EditTrajetForm({
     if (editingAdresse && adresse) {
       trajetUpdate.depart_adresse = adresse.address;
       trajetUpdate.depart_position = `POINT(${adresse.lng} ${adresse.lat})`;
+      if (route && route.geometry.coordinates.length >= 2) {
+        const coords = route.geometry.coordinates
+          .map(([lng, lat]) => `${lng} ${lat}`)
+          .join(", ");
+        trajetUpdate.trajet_ligne = `LINESTRING(${coords})`;
+      }
     }
 
     const { error: updErr } = await supabase
@@ -256,15 +289,32 @@ export function EditTrajetForm({
               </button>
             </div>
             {adresse && (
-              <Map
-                center={[adresse.lng, adresse.lat]}
-                zoom={13}
-                markers={[
-                  { lat: adresse.lat, lng: adresse.lng, label: "Départ" },
-                ]}
-                circle={{ lat: adresse.lat, lng: adresse.lng, radiusKm: rayon }}
-                className="mt-3 h-64 w-full rounded-lg overflow-hidden"
-              />
+              <>
+                <Map
+                  center={[adresse.lng, adresse.lat]}
+                  zoom={13}
+                  markers={[
+                    { lat: adresse.lat, lng: adresse.lng, label: "Départ" },
+                    { lat: eglisePos.lat, lng: eglisePos.lng, label: "Église", color: "#a855f7" },
+                  ]}
+                  route={
+                    route
+                      ? {
+                          coordinates: route.geometry.coordinates,
+                          corridorKm: rayon,
+                        }
+                      : undefined
+                  }
+                  className="mt-3 h-64 w-full rounded-lg overflow-hidden"
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  {routeLoading
+                    ? "Calcul de l'itinéraire…"
+                    : route
+                      ? `Itinéraire : ${route.distanceKm.toFixed(1)} km · ${Math.round(route.durationSec / 60)} min · zone visible = ${rayon} km autour de la route`
+                      : "Itinéraire non disponible. Le matching se fera en ligne droite."}
+                </p>
+              </>
             )}
           </>
         )}

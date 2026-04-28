@@ -11,7 +11,7 @@ import { Map, type MapMarker } from "@/components/map";
 import type { GeocodeResult } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { notify } from "@/lib/notify";
-import { fenetreDepart } from "@/lib/time";
+
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
@@ -463,7 +463,7 @@ function TrajetItem({
             <span className="truncate">{trajet.depart_adresse}</span>
           </div>
           <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Départ entre <strong>{fenetreDepart(trajet.heure_depart)}</strong>
+            Départ à <strong>{trajet.heure_depart.slice(0, 5)}</strong>
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-xs">
             <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">

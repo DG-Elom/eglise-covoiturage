@@ -21,7 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { defaultNavApp, buildNavUrl } from "@/lib/navigation";
 import { notify } from "@/lib/notify";
-import { fenetreDepart } from "@/lib/time";
+
 import { confirmToast } from "@/lib/confirm";
 import { ReportButton } from "@/components/report-button";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
@@ -159,7 +159,7 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
             </span>
           </div>
           <div className="mt-1 text-xs text-slate-500">
-            Départ entre <strong>{fenetreDepart(trajet.heure_depart)}</strong>
+            Départ à <strong>{trajet.heure_depart.slice(0, 5)}</strong>
           </div>
           <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
             <MapPin className="size-3" />

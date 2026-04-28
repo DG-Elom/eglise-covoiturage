@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Map } from "@/components/map";
-import { geocodeAddress, type GeocodeResult } from "@/lib/mapbox";
+import {
+  geocodeAddress,
+  getDrivingRoute,
+  type GeocodeResult,
+  type RouteResult,
+} from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { addMinutes } from "@/lib/time";
 
@@ -35,9 +40,11 @@ type Sens = "aller" | "retour" | "aller_retour";
 export function NouveauTrajetForm({
   conducteurId,
   cultes,
+  eglisePos,
 }: {
   conducteurId: string;
   cultes: Culte[];
+  eglisePos: { lat: number; lng: number };
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +78,33 @@ export function NouveauTrajetForm({
   const [aiLoading, setAiLoading] = useState(false);
 
   const [recurrenceWeeks, setRecurrenceWeeks] = useState(4);
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!adresse) {
+      setRoute(null);
+      return;
+    }
+    let cancelled = false;
+    setRouteLoading(true);
+    getDrivingRoute(
+      { lat: adresse.lat, lng: adresse.lng },
+      eglisePos,
+    )
+      .then((r) => {
+        if (!cancelled) setRoute(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRoute(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [adresse, eglisePos]);
   const culte = cultes.find((c) => c.id === culteId);
   const dates = useMemo(
     () => (culte ? nextOccurrences(culte.jour_semaine, recurrenceWeeks) : []),
@@ -94,6 +128,13 @@ export function NouveauTrajetForm({
     }
 
     setLoading(true);
+    let trajetLigne: string | undefined;
+    if (route && route.geometry.coordinates.length >= 2) {
+      const coords = route.geometry.coordinates
+        .map(([lng, lat]) => `${lng} ${lat}`)
+        .join(", ");
+      trajetLigne = `LINESTRING(${coords})`;
+    }
     const { data: trajet, error } = await supabase
       .from("trajets")
       .insert({
@@ -105,6 +146,7 @@ export function NouveauTrajetForm({
         places_total: places,
         rayon_detour_km: rayon,
         heure_depart: heureDepart,
+        ...(trajetLigne ? { trajet_ligne: trajetLigne } : {}),
       })
       .select("id")
       .single();
@@ -281,13 +323,32 @@ export function NouveauTrajetForm({
           placeholder="Saisis ton adresse de départ"
         />
         {adresse && (
-          <Map
-            center={[adresse.lng, adresse.lat]}
-            zoom={13}
-            markers={[{ lat: adresse.lat, lng: adresse.lng, label: "Départ" }]}
-            circle={{ lat: adresse.lat, lng: adresse.lng, radiusKm: rayon }}
-            className="mt-3 h-64 w-full rounded-lg overflow-hidden"
-          />
+          <>
+            <Map
+              center={[adresse.lng, adresse.lat]}
+              zoom={13}
+              markers={[
+                { lat: adresse.lat, lng: adresse.lng, label: "Départ" },
+                { lat: eglisePos.lat, lng: eglisePos.lng, label: "Église", color: "#a855f7" },
+              ]}
+              route={
+                route
+                  ? {
+                      coordinates: route.geometry.coordinates,
+                      corridorKm: rayon,
+                    }
+                  : undefined
+              }
+              className="mt-3 h-72 w-full rounded-lg overflow-hidden"
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              {routeLoading
+                ? "Calcul de l'itinéraire…"
+                : route
+                  ? `Itinéraire : ${route.distanceKm.toFixed(1)} km · ${Math.round(route.durationSec / 60)} min · zone visible = ${rayon} km autour de la route`
+                  : "Itinéraire non disponible. Le matching se fera en ligne droite."}
+            </p>
+          </>
         )}
       </Section>
 

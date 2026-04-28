@@ -85,6 +85,7 @@ export type Database = {
           culte_id: string;
           depart_adresse: string;
           depart_position: string;
+          trajet_ligne?: string;
           sens: "aller" | "retour" | "aller_retour";
           places_total: number;
           heure_depart: string;
