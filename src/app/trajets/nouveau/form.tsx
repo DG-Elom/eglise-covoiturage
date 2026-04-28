@@ -14,7 +14,6 @@ import {
   type RouteResult,
 } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
-import { addMinutes } from "@/lib/time";
 
 type ParsedTrajet = {
   culte_id?: string | null;
@@ -539,8 +538,7 @@ export function NouveauTrajetForm({
             className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm sm:w-40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
           <p className="mt-1.5 text-xs text-slate-500">
-            Les passagers verront que tu pars entre <strong>{heureDepart}</strong> et{" "}
-            <strong>{addMinutes(heureDepart, 30)}</strong>.
+            Les passagers verront que tu pars à <strong>{heureDepart}</strong>.
           </p>
         </label>
       </Section>
