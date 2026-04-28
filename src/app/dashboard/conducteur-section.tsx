@@ -13,6 +13,7 @@ import {
   Trash2,
   CalendarX,
   Pencil,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -411,6 +412,13 @@ function ReservationRow({
             <Phone className="size-3" />
             {passager.telephone}
           </a>
+          <Link
+            href={`/messages/${reservation.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            <MessageCircle className="size-3" />
+            Discuter
+          </Link>
           <NavLink address={reservation.pickup_adresse} />
           <ReportButton
             reservationId={reservation.id}

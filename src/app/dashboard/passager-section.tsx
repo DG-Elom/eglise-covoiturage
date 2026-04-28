@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Phone, Car, X, Clock, Check } from "lucide-react";
+import Link from "next/link";
+import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -171,6 +172,13 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
                 <Phone className="size-3" />
                 {conducteur.telephone}
               </a>
+              <Link
+                href={`/messages/${reservation.id}`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs hover:bg-emerald-50 transition dark:border-emerald-700 dark:bg-slate-900 dark:hover:bg-emerald-950/40"
+              >
+                <MessageCircle className="size-3" />
+                Discuter
+              </Link>
               {conducteur.voiture_modele && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-emerald-900 dark:text-emerald-200">
                   <Car className="size-3" />

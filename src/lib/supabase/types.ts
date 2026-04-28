@@ -138,6 +138,26 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      messages: {
+        Row: {
+          id: string;
+          reservation_id: string | null;
+          expediteur_id: string;
+          destinataire_id: string;
+          contenu: string;
+          lu: boolean;
+          envoye_le: string;
+        };
+        Insert: {
+          reservation_id?: string | null;
+          expediteur_id: string;
+          destinataire_id: string;
+          contenu: string;
+          lu?: boolean;
+        };
+        Update: Partial<{ lu: boolean }>;
+        Relationships: [];
+      };
       reservations: {
         Row: {
           id: string;
