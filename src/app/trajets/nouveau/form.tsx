@@ -46,16 +46,17 @@ export function NouveauTrajetForm({
   const [culteId, setCulteId] = useState<string>(cultes[0]?.id ?? "");
   const [sens, setSens] = useState<Sens>("aller_retour");
   const [places, setPlaces] = useState(2);
-  const [rayon, setRayon] = useState(3);
+  const [rayon, setRayon] = useState(5);
   const [heureDepart, setHeureDepart] = useState("08:00");
   const [datesSelected, setDatesSelected] = useState<Set<string>>(new Set());
   const [aiText, setAiText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
 
+  const [recurrenceWeeks, setRecurrenceWeeks] = useState(4);
   const culte = cultes.find((c) => c.id === culteId);
   const dates = useMemo(
-    () => (culte ? nextOccurrences(culte.jour_semaine, 4) : []),
-    [culte],
+    () => (culte ? nextOccurrences(culte.jour_semaine, recurrenceWeeks) : []),
+    [culte, recurrenceWeeks],
   );
   const todayStr = useMemo(() => toDateString(new Date()), []);
 
@@ -152,7 +153,7 @@ export function NouveauTrajetForm({
       }
       if (parsed.sens) setSens(parsed.sens);
       if (typeof parsed.rayon_detour_km === "number") {
-        setRayon(Math.min(5, Math.max(0.5, parsed.rayon_detour_km)));
+        setRayon(Math.min(10, Math.max(0.5, parsed.rayon_detour_km)));
       }
 
       if (parsed.dates && parsed.dates.length > 0) {
@@ -312,18 +313,38 @@ export function NouveauTrajetForm({
           <p className="text-sm text-slate-500">Choisis d&apos;abord un programme.</p>
         ) : (
           <>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs text-slate-500">
-                Coche les dates où tu peux conduire.
-              </p>
+            <div className="mb-3 grid gap-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/40 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Récurrence
+                </label>
+                <select
+                  value={recurrenceWeeks}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setRecurrenceWeeks(n);
+                    setDatesSelected(new Set());
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value={1}>Cette semaine seulement</option>
+                  <option value={2}>2 prochaines semaines</option>
+                  <option value={4}>4 prochaines semaines</option>
+                  <option value={8}>8 prochaines semaines</option>
+                  <option value={12}>12 prochaines semaines</option>
+                </select>
+              </div>
               <button
                 type="button"
                 onClick={toggleAllDates}
-                className="text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
               >
                 {datesSelected.size === dates.length ? "Tout décocher" : "Tout cocher"}
               </button>
             </div>
+            <p className="mb-3 text-xs text-slate-500">
+              Coche les dates où tu peux conduire.
+            </p>
             <div className="grid gap-2 sm:grid-cols-4">
               {dates.map((d) => {
                 const ds = toDateString(d);
@@ -466,16 +487,16 @@ export function NouveauTrajetForm({
             </span>
             <input
               type="range"
-              min={0.5}
-              max={5}
+              min={1}
+              max={10}
               step={0.5}
               value={rayon}
               onChange={(e) => setRayon(Number(e.target.value))}
               className="mt-2 w-full"
             />
             <div className="flex justify-between text-[10px] text-slate-400 mt-0.5 dark:text-slate-500">
-              <span>0.5 km</span>
-              <span>5 km</span>
+              <span>1 km</span>
+              <span>10 km</span>
             </div>
           </label>
         </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Car, Search, Plus } from "lucide-react";
+import { Car, Search, Plus, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
@@ -52,6 +52,21 @@ export default async function DashboardPage() {
     mesTrajets = (data ?? []) as unknown as ConducteurTrajet[];
   }
 
+  const [{ count: nbConducteurs }, { count: nbPassagers }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .in("role", ["conducteur", "les_deux"]),
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .in("role", ["passager", "les_deux"]),
+  ]);
+  const ratioBas =
+    (nbPassagers ?? 0) >= 3 &&
+    (nbConducteurs ?? 0) > 0 &&
+    (nbPassagers ?? 0) >= (nbConducteurs ?? 0) * 2;
+
   let mesReservations: PassagerReservation[] = [];
   if (peutVoyager) {
     const { data } = await supabase
@@ -98,6 +113,37 @@ export default async function DashboardPage() {
             Bienvenue sur ton espace de covoiturage.
           </p>
         </div>
+
+        {ratioBas && peutConduire && (
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/60 dark:bg-amber-950/30">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-900 dark:text-amber-100">
+                Manque de conducteurs
+              </p>
+              <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/90">
+                {nbPassagers} fidèles cherchent un trajet pour seulement {nbConducteurs}{" "}
+                conducteur{(nbConducteurs ?? 0) > 1 ? "s" : ""}. Propose tes trajets pour
+                aider la famille 🙏
+              </p>
+            </div>
+          </div>
+        )}
+
+        {ratioBas && !peutConduire && (
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-slate-500" />
+            <div className="text-sm">
+              <p className="font-medium text-slate-900 dark:text-slate-100">
+                Tu as une voiture ?
+              </p>
+              <p className="mt-0.5 text-slate-600 dark:text-slate-400">
+                Beaucoup de fidèles cherchent un trajet. Tu peux passer en mode
+                « conducteur » dans <Link href="/profil" className="underline">ton profil</Link>.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {peutConduire && (

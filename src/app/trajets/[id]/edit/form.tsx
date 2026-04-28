@@ -399,16 +399,16 @@ export function EditTrajetForm({
             </span>
             <input
               type="range"
-              min={0.5}
-              max={5}
+              min={1}
+              max={10}
               step={0.5}
               value={rayon}
               onChange={(e) => setRayon(Number(e.target.value))}
               className="mt-2 w-full"
             />
             <div className="flex justify-between text-[10px] text-slate-400 mt-0.5 dark:text-slate-500">
-              <span>0.5 km</span>
-              <span>5 km</span>
+              <span>1 km</span>
+              <span>10 km</span>
             </div>
           </label>
         </div>
