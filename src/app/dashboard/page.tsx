@@ -62,6 +62,7 @@ export default async function DashboardPage() {
         `
         id, statut, sens, pickup_adresse, demande_le,
         trajets_instances!inner (
+          id,
           date,
           trajets (
             depart_adresse,

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { fenetreDepart } from "@/lib/time";
 import { confirmToast } from "@/lib/confirm";
+import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
@@ -44,6 +45,7 @@ export type PassagerReservation = {
   pickup_adresse: string;
   demande_le: string;
   trajets_instances: {
+    id: string;
     date: string;
     trajets: {
       depart_adresse: string;
@@ -182,6 +184,15 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
                 cibleNom={`${conducteur.prenom} ${conducteur.nom}`}
               />
             </div>
+
+            {inst && inst.date === new Date().toISOString().slice(0, 10) && (
+              <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                <PassagerTracking
+                  trajetInstanceId={inst.id}
+                  pickupAdresse={reservation.pickup_adresse}
+                />
+              </div>
+            )}
           </div>
         )}
 

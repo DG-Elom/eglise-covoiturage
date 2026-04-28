@@ -23,6 +23,7 @@ import { notify } from "@/lib/notify";
 import { fenetreDepart } from "@/lib/time";
 import { confirmToast } from "@/lib/confirm";
 import { ReportButton } from "@/components/report-button";
+import { ConducteurTracking } from "@/components/conducteur-tracking";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const SENS_LABEL: Record<string, string> = {
@@ -280,6 +281,12 @@ function InstanceBlock({
           </button>
         </div>
       </div>
+
+      {!isPast && instance.date === today && reservations.some((r) => r.statut === "accepted") && (
+        <div className="mt-2 flex">
+          <ConducteurTracking trajetInstanceId={instance.id} />
+        </div>
+      )}
 
       {reservations.length === 0 ? (
         <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Aucune demande pour cette date.</p>
