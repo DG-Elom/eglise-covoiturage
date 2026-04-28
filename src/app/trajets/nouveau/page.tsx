@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AppHeader } from "@/components/app-header";
 import { NouveauTrajetForm } from "./form";
 
 export default async function NouveauTrajetPage() {
@@ -11,7 +12,7 @@ export default async function NouveauTrajetPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, prenom, nom, photo_url, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -27,15 +28,25 @@ export default async function NouveauTrajetPage() {
     .order("jour_semaine");
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Proposer un trajet</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <>
+      <AppHeader
+        title="Proposer un trajet"
+        back={{ href: "/dashboard" }}
+        user={{
+          prenom: profile.prenom,
+          nom: profile.nom,
+          email: user.email,
+          photoUrl: profile.photo_url,
+        }}
+        isAdmin={!!profile.is_admin}
+      />
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
           Déclare ton point de départ et le culte concerné. Tu pourras récupérer
           les passagers proches de ton chemin.
         </p>
-      </div>
-      <NouveauTrajetForm conducteurId={profile.id} cultes={cultes ?? []} />
-    </main>
+        <NouveauTrajetForm conducteurId={profile.id} cultes={cultes ?? []} />
+      </main>
+    </>
   );
 }

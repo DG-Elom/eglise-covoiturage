@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { AvatarUpload } from "@/components/avatar-upload";
+import { confirmToast } from "@/lib/confirm";
 
 type Role = "passager" | "conducteur" | "les_deux";
 
@@ -24,9 +25,34 @@ type Profile = {
 export function ProfilForm({ profile, email }: { profile: Profile; email: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [role, setRole] = useState<Role>(profile.role);
   const [photoUrl, setPhotoUrl] = useState<string | null>(profile.photo_url);
   const isConducteur = role === "conducteur" || role === "les_deux";
+
+  async function deleteAccount() {
+    const ok = await confirmToast(
+      "Supprimer définitivement ton compte ? Toutes tes données (trajets, réservations, messages) seront effacées.",
+      { confirmLabel: "Supprimer", destructive: true },
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(data.error ?? "Échec de la suppression");
+        setDeleting(false);
+        return;
+      }
+      toast.success("Compte supprimé. À bientôt.");
+      router.push("/");
+      router.refresh();
+    } catch {
+      toast.error("Erreur réseau");
+      setDeleting(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -143,6 +169,29 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         {loading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
         Enregistrer
       </button>
+
+      <div className="rounded-xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
+        <h2 className="text-sm font-semibold text-red-900 dark:text-red-200">
+          Zone de danger
+        </h2>
+        <p className="mt-1 text-xs text-red-800/80 dark:text-red-300/80">
+          Supprimer ton compte effacera définitivement ton profil, tes trajets
+          et tes réservations. Cette action est irréversible.
+        </p>
+        <button
+          type="button"
+          onClick={deleteAccount}
+          disabled={deleting}
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 transition dark:border-red-900/60 dark:bg-slate-900 dark:text-red-300 dark:hover:bg-red-950/40"
+        >
+          {deleting ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="size-3.5" />
+          )}
+          Supprimer mon compte
+        </button>
+      </div>
     </form>
   );
 }

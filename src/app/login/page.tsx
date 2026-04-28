@@ -48,7 +48,7 @@ export default function LoginPage() {
           <div className="flex justify-center">
             <Logo size="lg" />
           </div>
-          <h1 className="pt-2 text-2xl font-semibold tracking-tight">Covoiturage Église</h1>
+          <h1 className="pt-2 text-2xl font-semibold tracking-tight">Covoiturage ICC Metz</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Connectez-vous pour proposer ou rejoindre un trajet
           </p>

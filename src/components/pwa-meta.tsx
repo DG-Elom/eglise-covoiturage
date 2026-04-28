@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const pwaMetadata: Metadata = {
-  applicationName: "Covoiturage Église",
+  applicationName: "Covoiturage ICC Metz",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

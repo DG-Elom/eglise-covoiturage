@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AppHeader } from "@/components/app-header";
 import {
   CalendrierView,
   type CalendrierConducteurTrajet,
@@ -22,7 +23,7 @@ export default async function CalendrierPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("prenom, role")
+    .select("prenom, nom, role, photo_url, is_admin")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
@@ -81,21 +82,29 @@ export default async function CalendrierPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-          Calendrier
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <>
+      <AppHeader
+        title="Calendrier"
+        back={{ href: "/dashboard" }}
+        user={{
+          prenom: profile.prenom,
+          nom: profile.nom,
+          email: user.email,
+          photoUrl: profile.photo_url,
+        }}
+        isAdmin={!!profile.is_admin}
+      />
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
           Vue mensuelle de tes trajets et réservations.
         </p>
-      </header>
-      <CalendrierView
-        trajets={mesTrajets}
-        reservations={mesReservations}
-        initialYear={now.getFullYear()}
-        initialMonth={now.getMonth()}
-      />
-    </main>
+        <CalendrierView
+          trajets={mesTrajets}
+          reservations={mesReservations}
+          initialYear={now.getFullYear()}
+          initialMonth={now.getMonth()}
+        />
+      </main>
+    </>
   );
 }

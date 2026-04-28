@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AppHeader } from "@/components/app-header";
 import { EditTrajetForm } from "./form";
 
 export default async function EditTrajetPage({
@@ -16,7 +17,7 @@ export default async function EditTrajetPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, prenom, nom, photo_url, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -63,17 +64,24 @@ export default async function EditTrajetPage({
   const culte = Array.isArray(trajet.cultes) ? trajet.cultes[0] : trajet.cultes;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Modifier le trajet
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <>
+      <AppHeader
+        title="Modifier le trajet"
+        back={{ href: "/dashboard" }}
+        user={{
+          prenom: profile.prenom,
+          nom: profile.nom,
+          email: user.email,
+          photoUrl: profile.photo_url,
+        }}
+        isAdmin={!!profile.is_admin}
+      />
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
           Mets à jour les informations de ton trajet. Les passagers concernés
           seront prévenus si tu retires des dates.
         </p>
-      </div>
-      <EditTrajetForm
+        <EditTrajetForm
         trajet={{
           id: trajet.id,
           depart_adresse: trajet.depart_adresse,
@@ -91,6 +99,7 @@ export default async function EditTrajetPage({
         instances={instances ?? []}
         reservations={reservations ?? []}
       />
-    </main>
+      </main>
+    </>
   );
 }

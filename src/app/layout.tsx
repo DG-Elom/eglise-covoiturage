@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Covoiturage Église",
+  title: "Covoiturage ICC Metz",
   description: "Trouvez un covoiturage vers les cultes de votre église",
   ...pwaMetadata,
 };

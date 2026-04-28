@@ -58,7 +58,15 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-slate-200 px-6 py-6 text-center text-xs text-slate-500 dark:border-slate-800">
-        © {new Date().getFullYear()} Covoiturage Église
+        <div>© {new Date().getFullYear()} Covoiturage ICC Metz</div>
+        <div className="mt-2 flex justify-center gap-4">
+          <Link href="/legal/mentions-legales" className="hover:underline">
+            Mentions légales
+          </Link>
+          <Link href="/legal/confidentialite" className="hover:underline">
+            Confidentialité
+          </Link>
+        </div>
       </footer>
     </main>
   );

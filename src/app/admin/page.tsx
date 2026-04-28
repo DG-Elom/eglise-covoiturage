@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { AppHeader } from "@/components/app-header";
 import { ProgrammesSection } from "./programmes-section";
 import { SignalementsSection, type SignalementRow } from "./signalements-section";
 import { StatsSection } from "./stats-section";
@@ -15,7 +15,7 @@ export default async function AdminPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin, prenom")
+    .select("is_admin, prenom, nom, photo_url")
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
@@ -40,31 +40,33 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-8">
-      <header className="mb-6">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 transition dark:hover:text-slate-100"
-        >
-          <ArrowLeft className="size-3" /> Dashboard
-        </Link>
-        <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold">
-          <ShieldCheck className="size-6 text-emerald-600 dark:text-emerald-400" />
-          Administration
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <>
+      <AppHeader
+        title="Administration"
+        back={{ href: "/dashboard" }}
+        user={{
+          prenom: profile.prenom,
+          nom: profile.nom,
+          email: user.email,
+          photoUrl: profile.photo_url,
+        }}
+        isAdmin
+      />
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+          <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
           Gestion des programmes, modération et statistiques.
-        </p>
-      </header>
+        </div>
 
-      <div className="space-y-10">
-        <StatsSection stats={stats} />
-        <ProgrammesSection programmes={cultes ?? []} />
-        <SignalementsSection
-          signalements={(signalements ?? []) as unknown as SignalementRow[]}
-        />
-      </div>
-    </main>
+        <div className="space-y-10">
+          <StatsSection stats={stats} />
+          <ProgrammesSection programmes={cultes ?? []} />
+          <SignalementsSection
+            signalements={(signalements ?? []) as unknown as SignalementRow[]}
+          />
+        </div>
+      </main>
+    </>
   );
 }
 

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Covoiturage Église",
-    short_name: "Covoiturage",
-    description: "Covoiturage entre fidèles d'une église locale",
+    name: "Covoiturage ICC Metz",
+    short_name: "ICC Covoit",
+    description: "Covoiturage entre fidèles de l'ICC Metz",
     start_url: "/",
     display: "standalone",
     background_color: "#f8fafc",

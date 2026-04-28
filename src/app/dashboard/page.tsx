@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Car, Search, Plus, ShieldCheck, User, Calendar } from "lucide-react";
+import { Car, Search, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar } from "@/components/avatar";
+import { AppHeader } from "@/components/app-header";
 import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
 import { PassagerSection, type PassagerReservation } from "./passager-section";
-import { LogoutButton } from "./logout-button";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { PushSubscribe } from "@/components/push-subscribe";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -83,51 +80,26 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-8">
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Avatar
-            photoUrl={profile.photo_url}
-            prenom={profile.prenom}
-            nom=""
-            size="md"
-          />
-          <div>
-            <h1 className="text-2xl font-semibold">Bonjour {profile.prenom} 👋</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
-          </div>
+    <>
+      <AppHeader
+        user={{
+          prenom: profile.prenom,
+          email: user.email,
+          photoUrl: profile.photo_url,
+        }}
+        isAdmin={!!profile.is_admin}
+      />
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-2">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Bonjour {profile.prenom} 👋
+          </h1>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Bienvenue sur ton espace de covoiturage.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {profile.is_admin && (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800 hover:bg-emerald-100 transition dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
-            >
-              <ShieldCheck className="size-3.5" />
-              Admin
-            </Link>
-          )}
-          <Link
-            href="/calendrier"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            <Calendar className="size-3.5" />
-            Calendrier
-          </Link>
-          <Link
-            href="/profil"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            <User className="size-3.5" />
-            Profil
-          </Link>
-          <PushSubscribe />
-          <LogoutButton />
-          <ThemeToggle />
-        </div>
-      </header>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {peutConduire && (
           <ActionCard
             href="/trajets/nouveau"
@@ -165,7 +137,8 @@ export default async function DashboardPage() {
           <PassagerSection reservations={mesReservations} />
         </section>
       )}
-    </main>
+      </main>
+    </>
   );
 }
 

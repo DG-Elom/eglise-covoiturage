@@ -23,14 +23,14 @@ function shell(title: string, content: string) {
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;padding:24px;margin:0;color:#0f172a;">
 <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
 <div style="padding:24px 24px 16px;">
-<div style="font-size:13px;color:#64748b;margin-bottom:4px;">Covoiturage Église</div>
+<div style="font-size:13px;color:#64748b;margin-bottom:4px;">Covoiturage ICC Metz</div>
 <h1 style="margin:0;font-size:20px;">${title}</h1>
 </div>
 <div style="padding:0 24px 24px;font-size:14px;line-height:1.6;">
 ${content}
 </div>
 </div>
-<p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:16px;">Cet email t'est envoyé par Covoiturage Église.</p>
+<p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:16px;">Cet email t'est envoyé par Covoiturage ICC Metz.</p>
 </body></html>`;
 }
 

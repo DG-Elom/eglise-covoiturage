@@ -49,9 +49,16 @@ export function Logo({
         <circle cx="22" cy="46" r="3.5" fill="#0f172a" />
         <circle cx="42" cy="46" r="3.5" fill="#0f172a" />
       </svg>
+      <img
+        src="/icc-logo.svg"
+        alt="ICC Metz"
+        width={px}
+        height={px}
+        className="shrink-0"
+      />
       {withText && (
         <span className="font-semibold tracking-tight">
-          Covoiturage <span className="text-emerald-700">Église</span>
+          Covoiturage <span className="text-emerald-700">ICC Metz</span>
         </span>
       )}
     </span>
