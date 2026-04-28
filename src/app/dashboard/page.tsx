@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   }
 
   let alreadyRatedIdsAsConduct: string[] = [];
-  let passagerRatings: Map<string, RatingInfo> = new Map();
+  const passagerRatings: Map<string, RatingInfo> = new Map();
   if (peutConduire) {
     const { data: myRatings } = await supabase
       .from("trip_ratings")

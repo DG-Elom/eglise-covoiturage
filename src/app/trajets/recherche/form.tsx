@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MapPin, Users, Search } from "lucide-react";
+import { Loader2, MapPin, Users, Search, History } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { SavedPlacesButton } from "@/components/saved-places-button";
 import { Avatar } from "@/components/avatar";
 import { Map, type MapMarker } from "@/components/map";
 import type { GeocodeResult } from "@/lib/mapbox";
+import { geocodeAddress } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { notify } from "@/lib/notify";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
@@ -39,10 +40,12 @@ export function RechercheForm({
   passagerId,
   cultes,
   conducteurRatings,
+  recentAddresses,
 }: {
   passagerId: string;
   cultes: Culte[];
   conducteurRatings?: Record<string, ConducteurRating>;
+  recentAddresses?: string[];
 }) {
   const userId = passagerId;
   const router = useRouter();
@@ -115,6 +118,27 @@ export function RechercheForm({
             value={adresse}
             onChange={setAdresse}
           />
+          {recentAddresses && recentAddresses.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs text-slate-500 dark:text-slate-400">Récents</p>
+              <div className="flex flex-wrap gap-2">
+                {recentAddresses.map((addr) => (
+                  <button
+                    key={addr}
+                    type="button"
+                    onClick={async () => {
+                      const results = await geocodeAddress(addr);
+                      if (results.length > 0) setAdresse(results[0]);
+                    }}
+                    className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs hover:border-slate-300 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+                  >
+                    <History className="size-3 shrink-0" />
+                    <span className="truncate">{addr}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <AddressAutocomplete
             value={adresse}
             onChange={setAdresse}

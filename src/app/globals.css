@@ -5,20 +5,11 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --bg-from: #ffffff;
-  --bg-to: #f8fafc;
 }
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background: linear-gradient(180deg, var(--bg-from) 0%, var(--bg-to) 100%);
   min-height: 100svh;
-}
-
-:where(.dark, .dark *) body,
-.dark body {
-  --bg-from: #0f172a;
-  --bg-to: #020617;
 }
 
 *,

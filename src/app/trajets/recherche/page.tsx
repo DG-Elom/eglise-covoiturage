@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { RechercheForm } from "./form";
 import { TrajetsDisponibles, type TrajetDisponible } from "./trajets-disponibles";
+import { deduplicateRecentAddresses } from "./recent-addresses";
 
 export type ConducteurRating = { avg: number | null; count: number };
 
@@ -42,6 +43,17 @@ export default async function RecherchePage() {
     .order("date");
 
   const instances = (instancesRaw ?? []) as unknown as TrajetDisponible[];
+
+  const { data: pastReservations } = await supabase
+    .from("reservations")
+    .select("pickup_adresse")
+    .eq("passager_id", profile.id)
+    .order("demande_le", { ascending: false })
+    .limit(20);
+
+  const recentAddresses = deduplicateRecentAddresses(
+    (pastReservations ?? []) as { pickup_adresse: string }[],
+  );
 
   const { data: ratingsData } = await supabase
     .from("trip_ratings")
@@ -83,6 +95,7 @@ export default async function RecherchePage() {
           passagerId={profile.id}
           cultes={cultes ?? []}
           conducteurRatings={conducteurRatings}
+          recentAddresses={recentAddresses}
         />
         <TrajetsDisponibles instances={instances} conducteurRatings={conducteurRatings} />
       </main>

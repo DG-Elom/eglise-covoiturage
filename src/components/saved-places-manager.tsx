@@ -42,29 +42,24 @@ export function SavedPlacesManager({ userId, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function fetchPlaces() {
-    const { data, error } = await supabase
+  useEffect(() => {
+    let cancelled = false;
+    supabase
       .from("saved_places")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: true });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setPlaces(data ?? []);
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchPlaces().finally(() => {
-      if (!cancelled) setLoading(false);
-    });
+      .order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) toast.error(error.message);
+        else setPlaces(data ?? []);
+        setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   function startEdit(place: SavedPlace) {
     setEditingId(place.id);

@@ -25,6 +25,7 @@ import { notify } from "@/lib/notify";
 
 import { confirmToast } from "@/lib/confirm";
 import { ReportButton } from "@/components/report-button";
+import { OptimizedRouteCard } from "@/components/optimized-route-card";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
 import { RateTripModal } from "@/components/rate-trip-modal";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
@@ -218,6 +219,8 @@ function TrajetCard({
             key={inst.id}
             instance={inst}
             placesTotal={trajet.places_total}
+            departAdresse={trajet.depart_adresse}
+            heureDepart={trajet.heure_depart}
             alreadyRatedIds={alreadyRatedIds}
             passagerRatings={passagerRatings}
           />
@@ -233,11 +236,15 @@ function TrajetCard({
 function InstanceBlock({
   instance,
   placesTotal,
+  departAdresse,
+  heureDepart,
   alreadyRatedIds,
   passagerRatings,
 }: {
   instance: ConducteurTrajet["trajets_instances"][number];
   placesTotal: number;
+  departAdresse: string;
+  heureDepart: string;
   alreadyRatedIds: string[];
   passagerRatings: Map<string, RatingInfo>;
 }) {
@@ -327,6 +334,26 @@ function InstanceBlock({
       {!isPast && instance.date === today && activeReservations.some((r) => r.statut === "accepted") && (
         <div className="mt-2 flex">
           <ConducteurTracking trajetInstanceId={instance.id} />
+        </div>
+      )}
+
+      {!isPast && acceptees > 0 && (
+        <div className="mt-3">
+          <OptimizedRouteCard
+            conducteurAdresse={departAdresse}
+            heureDepart={heureDepart}
+            passengers={activeReservations
+              .filter((r) => r.statut === "accepted" && r.passager)
+              .map((r) => ({
+                reservationId: r.id,
+                prenom: r.passager?.prenom ?? "",
+                nom: r.passager?.nom ?? "",
+                photoUrl: r.passager?.photo_url ?? null,
+                pickupAdresse: r.pickup_adresse,
+              }))}
+            eglisePos={{ lat: 49.146943, lng: 6.175955 }}
+            egliseLabel="ICC Metz"
+          />
         </div>
       )}
 
