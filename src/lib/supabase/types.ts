@@ -19,6 +19,10 @@ export type Database = {
           is_admin: boolean;
           suspended: boolean;
           suspended_reason: string | null;
+          available_now: boolean;
+          available_until: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_phone: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -36,8 +40,57 @@ export type Database = {
           is_admin?: boolean;
           suspended?: boolean;
           suspended_reason?: string | null;
+          available_now?: boolean;
+          available_until?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
+      };
+      saved_places: {
+        Row: {
+          id: string;
+          user_id: string;
+          label: string;
+          icon: string | null;
+          adresse: string;
+          position: unknown;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          label: string;
+          icon?: string | null;
+          adresse: string;
+          position: string;
+        };
+        Update: Partial<{
+          label: string;
+          icon: string | null;
+          adresse: string;
+          position: string;
+        }>;
+        Relationships: [];
+      };
+      trip_ratings: {
+        Row: {
+          id: string;
+          reservation_id: string;
+          rater_id: string;
+          rated_id: string;
+          stars: number;
+          comment: string | null;
+          created_at: string;
+        };
+        Insert: {
+          reservation_id: string;
+          rater_id: string;
+          rated_id: string;
+          stars: number;
+          comment?: string | null;
+        };
+        Update: Partial<{ stars: number; comment: string | null }>;
         Relationships: [];
       };
       cultes: {

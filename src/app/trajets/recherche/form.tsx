@@ -6,11 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Loader2, MapPin, Users, Search } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { SavedPlacesButton } from "@/components/saved-places-button";
 import { Avatar } from "@/components/avatar";
 import { Map, type MapMarker } from "@/components/map";
 import type { GeocodeResult } from "@/lib/mapbox";
 import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { notify } from "@/lib/notify";
+import { ProfileRatingBadge } from "@/components/profile-rating-badge";
+import type { ConducteurRating } from "./page";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -35,10 +38,13 @@ type TrajetCompatible = {
 export function RechercheForm({
   passagerId,
   cultes,
+  conducteurRatings,
 }: {
   passagerId: string;
   cultes: Culte[];
+  conducteurRatings?: Record<string, ConducteurRating>;
 }) {
+  const userId = passagerId;
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
@@ -104,6 +110,11 @@ export function RechercheForm({
     <div className="space-y-6">
       <form onSubmit={onSearch} className="space-y-6">
         <Section title="Ton adresse">
+          <SavedPlacesButton
+            userId={userId}
+            value={adresse}
+            onChange={setAdresse}
+          />
           <AddressAutocomplete
             value={adresse}
             onChange={setAdresse}
@@ -221,7 +232,7 @@ export function RechercheForm({
         <button
           type="submit"
           disabled={loading || !adresse || !culteId || !date}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition active:scale-95 transition-transform dark:bg-emerald-600 dark:hover:bg-emerald-500"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
           Rechercher
@@ -234,6 +245,7 @@ export function RechercheForm({
           adresse={adresse}
           onReserve={reserver}
           reserving={reserving}
+          conducteurRatings={conducteurRatings}
         />
       )}
 
@@ -338,11 +350,13 @@ function Resultats({
   adresse,
   onReserve,
   reserving,
+  conducteurRatings,
 }: {
   results: TrajetCompatible[];
   adresse: GeocodeResult | null;
   onReserve: (t: TrajetCompatible) => void;
   reserving: string | null;
+  conducteurRatings?: Record<string, ConducteurRating>;
 }) {
   const dansZone = results.filter((r) => r.dans_zone);
   const horsZone = results.filter((r) => !r.dans_zone).slice(0, 3);
@@ -387,6 +401,7 @@ function Resultats({
                 trajet={t}
                 onReserve={onReserve}
                 reserving={reserving}
+                rating={conducteurRatings?.[t.conducteur_id]}
               />
             ))}
           </ul>
@@ -414,6 +429,7 @@ function Resultats({
                 onReserve={onReserve}
                 reserving={reserving}
                 outOfZone
+                rating={conducteurRatings?.[t.conducteur_id]}
               />
             ))}
           </ul>
@@ -428,11 +444,13 @@ function TrajetItem({
   onReserve,
   reserving,
   outOfZone,
+  rating,
 }: {
   trajet: TrajetCompatible;
   onReserve: (t: TrajetCompatible) => void;
   reserving: string | null;
   outOfZone?: boolean;
+  rating?: ConducteurRating;
 }) {
   return (
     <li
@@ -444,7 +462,7 @@ function TrajetItem({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Avatar
               photoUrl={trajet.conducteur_photo_url}
               prenom={trajet.conducteur_prenom}
@@ -452,6 +470,9 @@ function TrajetItem({
               size="sm"
             />
             <span className="font-medium">{trajet.conducteur_prenom}</span>
+            {rating && rating.count > 0 && (
+              <ProfileRatingBadge avg={rating.avg} count={rating.count} size="sm" />
+            )}
             {outOfZone && (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 hors zone
@@ -479,7 +500,7 @@ function TrajetItem({
           type="button"
           onClick={() => onReserve(trajet)}
           disabled={reserving !== null}
-          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition shrink-0 dark:hover:bg-emerald-500"
+          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition active:scale-95 transition-transform shrink-0 dark:hover:bg-emerald-500"
         >
           {reserving === trajet.trajet_instance_id ? (
             <Loader2 className="size-4 animate-spin" />

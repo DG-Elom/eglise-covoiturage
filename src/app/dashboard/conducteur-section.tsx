@@ -14,6 +14,7 @@ import {
   CalendarX,
   Pencil,
   MessageCircle,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ import { notify } from "@/lib/notify";
 import { confirmToast } from "@/lib/confirm";
 import { ReportButton } from "@/components/report-button";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
+import { RateTripModal } from "@/components/rate-trip-modal";
+import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const SENS_LABEL: Record<string, string> = {
@@ -62,7 +65,17 @@ export type ConducteurTrajet = {
   }>;
 };
 
-export function ConducteurSection({ trajets }: { trajets: ConducteurTrajet[] }) {
+export type RatingInfo = { avg: number | null; count: number };
+
+export function ConducteurSection({
+  trajets,
+  alreadyRatedIds,
+  passagerRatings,
+}: {
+  trajets: ConducteurTrajet[];
+  alreadyRatedIds: string[];
+  passagerRatings: Map<string, RatingInfo>;
+}) {
   if (trajets.length === 0) {
     return (
       <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">
@@ -74,13 +87,26 @@ export function ConducteurSection({ trajets }: { trajets: ConducteurTrajet[] }) 
   return (
     <div className="mt-3 space-y-4">
       {trajets.map((t) => (
-        <TrajetCard key={t.id} trajet={t} />
+        <TrajetCard
+          key={t.id}
+          trajet={t}
+          alreadyRatedIds={alreadyRatedIds}
+          passagerRatings={passagerRatings}
+        />
       ))}
     </div>
   );
 }
 
-function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
+function TrajetCard({
+  trajet,
+  alreadyRatedIds,
+  passagerRatings,
+}: {
+  trajet: ConducteurTrajet;
+  alreadyRatedIds: string[];
+  passagerRatings: Map<string, RatingInfo>;
+}) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
@@ -89,7 +115,7 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
     .filter(
       (i) =>
         i.date >= today ||
-        i.reservations.some((r) => r.statut === "accepted"),
+        i.reservations.some((r) => r.statut === "accepted" || r.statut === "completed"),
     )
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -188,7 +214,13 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
 
       <div className="divide-y divide-slate-100 dark:divide-slate-800">
         {instances.map((inst) => (
-          <InstanceBlock key={inst.id} instance={inst} placesTotal={trajet.places_total} />
+          <InstanceBlock
+            key={inst.id}
+            instance={inst}
+            placesTotal={trajet.places_total}
+            alreadyRatedIds={alreadyRatedIds}
+            passagerRatings={passagerRatings}
+          />
         ))}
         {instances.length === 0 && (
           <p className="px-4 py-3 text-sm text-slate-500">Aucune date à venir.</p>
@@ -201,16 +233,23 @@ function TrajetCard({ trajet }: { trajet: ConducteurTrajet }) {
 function InstanceBlock({
   instance,
   placesTotal,
+  alreadyRatedIds,
+  passagerRatings,
 }: {
   instance: ConducteurTrajet["trajets_instances"][number];
   placesTotal: number;
+  alreadyRatedIds: string[];
+  passagerRatings: Map<string, RatingInfo>;
 }) {
   const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
-  const reservations = instance.reservations.filter(
+  const activeReservations = instance.reservations.filter(
     (r) => r.statut === "pending" || r.statut === "accepted",
   );
-  const acceptees = reservations.filter((r) => r.statut === "accepted").length;
+  const completedReservations = instance.reservations.filter(
+    (r) => r.statut === "completed",
+  );
+  const acceptees = activeReservations.filter((r) => r.statut === "accepted").length;
   const today = new Date().toISOString().slice(0, 10);
   const isPast = instance.date < today;
   const dateLabel = new Date(instance.date).toLocaleDateString("fr-FR", {
@@ -221,8 +260,8 @@ function InstanceBlock({
 
   async function cancelDate() {
     const msg =
-      reservations.length > 0
-        ? `Annuler cette date ? ${reservations.length} passager(s) seront prévenus par email.`
+      activeReservations.length > 0
+        ? `Annuler cette date ? ${activeReservations.length} passager(s) seront prévenus par email.`
         : "Annuler cette date ?";
     const ok = await confirmToast(msg, {
       confirmLabel: "Annuler la date",
@@ -233,15 +272,15 @@ function InstanceBlock({
     setCancelling(true);
     const supabase = createClient();
 
-    if (reservations.length > 0) {
+    if (activeReservations.length > 0) {
       await supabase
         .from("reservations")
         .update({ statut: "cancelled", cancelled_le: new Date().toISOString() } as never)
         .in(
           "id",
-          reservations.map((r) => r.id),
+          activeReservations.map((r) => r.id),
         );
-      for (const r of reservations) {
+      for (const r of activeReservations) {
         void notify("trajet_date_cancelled", r.id);
       }
     }
@@ -259,6 +298,8 @@ function InstanceBlock({
     toast.success("Date annulée");
     router.refresh();
   }
+
+  const allDisplayed = [...activeReservations, ...completedReservations];
 
   return (
     <div className="px-4 py-3">
@@ -283,18 +324,24 @@ function InstanceBlock({
         </div>
       </div>
 
-      {!isPast && instance.date === today && reservations.some((r) => r.statut === "accepted") && (
+      {!isPast && instance.date === today && activeReservations.some((r) => r.statut === "accepted") && (
         <div className="mt-2 flex">
           <ConducteurTracking trajetInstanceId={instance.id} />
         </div>
       )}
 
-      {reservations.length === 0 ? (
+      {allDisplayed.length === 0 ? (
         <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Aucune demande pour cette date.</p>
       ) : (
         <ul className="mt-2 space-y-2">
-          {reservations.map((r) => (
-            <ReservationRow key={r.id} reservation={r} isPast={isPast} />
+          {allDisplayed.map((r) => (
+            <ReservationRow
+              key={r.id}
+              reservation={r}
+              isPast={isPast}
+              initiallyRated={alreadyRatedIds.includes(r.id)}
+              passagerRating={r.passager ? passagerRatings.get(r.passager.id) : undefined}
+            />
           ))}
         </ul>
       )}
@@ -305,14 +352,20 @@ function InstanceBlock({
 function ReservationRow({
   reservation,
   isPast,
+  initiallyRated,
+  passagerRating,
 }: {
   reservation: ConducteurTrajet["trajets_instances"][number]["reservations"][number];
   isPast: boolean;
+  initiallyRated: boolean;
+  passagerRating?: RatingInfo;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<
     "accept" | "refuse" | "completed" | "no_show" | null
   >(null);
+  const [rated, setRated] = useState(initiallyRated);
+  const [showRateModal, setShowRateModal] = useState(false);
 
   async function update(statut: "accepted" | "refused", action: "accept" | "refuse") {
     setLoading(action);
@@ -364,8 +417,17 @@ function ReservationRow({
             size="sm"
           />
           <div className="min-w-0">
-            <div className="font-medium">
-              {passager.prenom} {passager.nom}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium">
+                {passager.prenom} {passager.nom}
+              </span>
+              {passagerRating && passagerRating.count > 0 && (
+                <ProfileRatingBadge
+                  avg={passagerRating.avg}
+                  count={passagerRating.count}
+                  size="sm"
+                />
+              )}
             </div>
             <div className="mt-0.5 text-xs text-slate-500 flex items-center gap-1">
               <MapPin className="size-3" />
@@ -396,6 +458,10 @@ function ReservationRow({
               {loading === "accept" ? "..." : <Check className="size-3.5" />}
             </button>
           </div>
+        ) : reservation.statut === "completed" ? (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            Terminée
+          </span>
         ) : (
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
             Acceptée
@@ -448,6 +514,33 @@ function ReservationRow({
             </>
           )}
         </div>
+      )}
+
+      {reservation.statut === "completed" && !rated && (
+        <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setShowRateModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+          >
+            <Star className="size-3" />
+            Noter ce passager
+          </button>
+        </div>
+      )}
+
+      {showRateModal && (
+        <RateTripModal
+          reservationId={reservation.id}
+          otherPrenom={passager.prenom}
+          otherName={`${passager.prenom} ${passager.nom}`}
+          otherAvatarUrl={passager.photo_url}
+          onClose={() => setShowRateModal(false)}
+          onDone={() => {
+            setShowRateModal(false);
+            setRated(true);
+          }}
+        />
       )}
     </li>
   );

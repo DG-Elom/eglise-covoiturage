@@ -7,6 +7,7 @@ import {
   Calendar,
   ChevronDown,
   ShieldCheck,
+  Sparkles,
   User,
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
@@ -94,7 +95,7 @@ function UserMenu({ user, isAdmin }: { user: HeaderUser; isAdmin: boolean }) {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 pr-2 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 pr-2 transition active:scale-95 transition-transform hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
       >
         <Avatar
           photoUrl={user.photoUrl ?? null}
@@ -147,6 +148,9 @@ function UserMenu({ user, isAdmin }: { user: HeaderUser; isAdmin: boolean }) {
             </MenuLink>
             <MenuLink href="/calendrier" icon={<Calendar className="size-4" />}>
               Calendrier
+            </MenuLink>
+            <MenuLink href="/welcome" icon={<Sparkles className="size-4" />}>
+              Découvrir l&apos;app
             </MenuLink>
             {isAdmin && (
               <MenuLink href="/admin" icon={<ShieldCheck className="size-4" />}>

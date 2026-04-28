@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { SavedPlacesButton } from "@/components/saved-places-button";
 import { Map } from "@/components/map";
 import {
   geocodeAddress,
@@ -45,6 +46,7 @@ export function NouveauTrajetForm({
   cultes: Culte[];
   eglisePos: { lat: number; lng: number };
 }) {
+  const userId = conducteurId;
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -316,6 +318,11 @@ export function NouveauTrajetForm({
       </div>
 
       <Section title="Point de départ">
+        <SavedPlacesButton
+          userId={userId}
+          value={adresse}
+          onChange={setAdresse}
+        />
         <AddressAutocomplete
           value={adresse}
           onChange={setAdresse}
@@ -582,7 +589,7 @@ export function NouveauTrajetForm({
       <button
         type="submit"
         disabled={loading || !adresse}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition active:scale-95 transition-transform dark:bg-emerald-600 dark:hover:bg-emerald-500"
       >
         {loading && <Loader2 className="size-4 animate-spin" />}
         Créer le trajet

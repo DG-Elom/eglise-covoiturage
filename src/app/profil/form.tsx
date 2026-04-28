@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, MapPin, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { confirmToast } from "@/lib/confirm";
+import { AddSavedPlaceModal, SavedPlacesManager, iconEmoji } from "@/components/saved-places-manager";
+import { geocodeAddress } from "@/lib/mapbox";
+import type { Database } from "@/lib/supabase/types";
+
+type SavedPlace = Database["public"]["Tables"]["saved_places"]["Row"];
 
 type Role = "passager" | "conducteur" | "les_deux";
 
@@ -170,6 +175,8 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         Enregistrer
       </button>
 
+      <SavedPlacesSection userId={profile.id} />
+
       <div className="rounded-xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
         <h2 className="text-sm font-semibold text-red-900 dark:text-red-200">
           Zone de danger
@@ -193,6 +200,169 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         </button>
       </div>
     </form>
+  );
+}
+
+const MAX_PLACES = 8;
+
+function SavedPlacesSection({ userId }: { userId: string }) {
+  const supabase = createClient();
+  const [places, setPlaces] = useState<SavedPlace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newAdresse, setNewAdresse] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("saved_places")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setPlaces(data ?? []);
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, version]);
+
+  const [pendingGeocode, setPendingGeocode] = useState<{
+    adresse: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  async function handleAdd() {
+    const q = newAdresse.trim();
+    if (!q) {
+      toast.error("Saisis une adresse");
+      return;
+    }
+    setSearching(true);
+    const results = await geocodeAddress(q).catch(() => []);
+    setSearching(false);
+    if (results.length === 0) {
+      toast.error("Adresse introuvable. Essaie une formulation plus précise.");
+      return;
+    }
+    setPendingGeocode({
+      adresse: results[0].address,
+      lat: results[0].lat,
+      lng: results[0].lng,
+    });
+    setNewAdresse("");
+    setAddOpen(true);
+  }
+
+  return (
+    <>
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Mes lieux favoris
+          </h2>
+          <button
+            type="button"
+            onClick={() => {
+              setManagerOpen(true);
+            }}
+            className="text-xs text-slate-500 hover:text-slate-700 transition dark:hover:text-slate-300"
+          >
+            Gérer
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="size-4 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <>
+            {places.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                Aucun lieu enregistré. Ajoute tes adresses fréquentes pour les retrouver rapidement.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {places.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
+                  >
+                    <span className="text-base">{iconEmoji(p.icon)}</span>
+                    <span className="font-medium">{p.label}</span>
+                    <span className="truncate text-xs text-slate-400">— {p.adresse}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {places.length < MAX_PLACES && (
+              <div className="flex gap-2 pt-1">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={newAdresse}
+                    onChange={(e) => setNewAdresse(e.target.value)}
+                    placeholder="Adresse à ajouter…"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleAdd();
+                      }
+                    }}
+                    className="w-full rounded-lg border border-slate-200 pl-8 pr-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleAdd()}
+                  disabled={searching || !newAdresse.trim()}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+                >
+                  {searching ? <Loader2 className="size-3 animate-spin" /> : <Plus className="size-3" />}
+                  Ajouter
+                </button>
+              </div>
+            )}
+            <p className="text-[11px] text-slate-400">{places.length}/{MAX_PLACES} lieux</p>
+          </>
+        )}
+      </div>
+
+      {managerOpen && (
+        <SavedPlacesManager
+          userId={userId}
+          onClose={() => {
+            setManagerOpen(false);
+            setVersion((v) => v + 1);
+          }}
+        />
+      )}
+
+      {addOpen && pendingGeocode && (
+        <AddSavedPlaceModal
+          adresse={pendingGeocode.adresse}
+          lat={pendingGeocode.lat}
+          lng={pendingGeocode.lng}
+          userId={userId}
+          onClose={() => {
+            setAddOpen(false);
+            setPendingGeocode(null);
+          }}
+          onSaved={() => setVersion((v) => v + 1)}
+        />
+      )}
+    </>
   );
 }
 

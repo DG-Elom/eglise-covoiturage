@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Map } from "@/components/map";
 import { geocodeAddress } from "@/lib/mapbox";
 import { haversineKm, etaMinutes, formatDistance, type LatLng } from "@/lib/distance";
+import { SosButton } from "@/components/sos-button";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 type Pos = LatLng & { ts: number };
@@ -13,9 +14,13 @@ type Pos = LatLng & { ts: number };
 export function PassagerTracking({
   trajetInstanceId,
   pickupAdresse,
+  emergencyName,
+  emergencyPhone,
 }: {
   trajetInstanceId: string;
   pickupAdresse: string;
+  emergencyName?: string | null;
+  emergencyPhone?: string | null;
 }) {
   const [pickup, setPickup] = useState<LatLng | null>(null);
   const [conducteurPos, setConducteurPos] = useState<Pos | null>(null);
@@ -164,21 +169,24 @@ export function PassagerTracking({
         </>
       )}
 
-      {!soundEnabled ? (
-        <button
-          type="button"
-          onClick={enableSound}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
-        >
-          <Volume2 className="size-3" />
-          Activer l&apos;alerte sonore
-        </button>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-500">
-          <Volume2 className="size-3 text-emerald-600" />
-          Alerte sonore activée
-        </span>
-      )}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        {!soundEnabled ? (
+          <button
+            type="button"
+            onClick={enableSound}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            <Volume2 className="size-3" />
+            Activer l&apos;alerte sonore
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-500">
+            <Volume2 className="size-3 text-emerald-600" />
+            Alerte sonore activée
+          </span>
+        )}
+        <SosButton emergencyName={emergencyName} emergencyPhone={emergencyPhone} />
+      </div>
     </div>
   );
 }

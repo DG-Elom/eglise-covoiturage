@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle } from "lucide-react";
+import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle, Star } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -11,6 +11,7 @@ import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
 import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
+import { RateTripModal } from "@/components/rate-trip-modal";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
   pending: {
@@ -65,7 +66,17 @@ export type PassagerReservation = {
   } | null;
 };
 
-export function PassagerSection({ reservations }: { reservations: PassagerReservation[] }) {
+export function PassagerSection({
+  reservations,
+  alreadyRatedIds,
+  emergencyName,
+  emergencyPhone,
+}: {
+  reservations: PassagerReservation[];
+  alreadyRatedIds: string[];
+  emergencyName?: string | null;
+  emergencyPhone?: string | null;
+}) {
   if (reservations.length === 0) {
     return (
       <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">
@@ -77,15 +88,33 @@ export function PassagerSection({ reservations }: { reservations: PassagerReserv
   return (
     <ul className="mt-3 space-y-3">
       {reservations.map((r) => (
-        <ReservationCard key={r.id} reservation={r} />
+        <ReservationCard
+          key={r.id}
+          reservation={r}
+          initiallyRated={alreadyRatedIds.includes(r.id)}
+          emergencyName={emergencyName}
+          emergencyPhone={emergencyPhone}
+        />
       ))}
     </ul>
   );
 }
 
-function ReservationCard({ reservation }: { reservation: PassagerReservation }) {
+function ReservationCard({
+  reservation,
+  initiallyRated,
+  emergencyName,
+  emergencyPhone,
+}: {
+  reservation: PassagerReservation;
+  initiallyRated: boolean;
+  emergencyName?: string | null;
+  emergencyPhone?: string | null;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [rated, setRated] = useState(initiallyRated);
+  const [showRateModal, setShowRateModal] = useState(false);
   const inst = reservation.trajets_instances;
   const trajet = inst?.trajets;
   const conducteur = trajet?.conducteur;
@@ -196,6 +225,8 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
             {inst && inst.date === new Date().toISOString().slice(0, 10) && (
               <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800">
                 <PassagerTracking
+                  emergencyName={emergencyName}
+                  emergencyPhone={emergencyPhone}
                   trajetInstanceId={inst.id}
                   pickupAdresse={reservation.pickup_adresse}
                 />
@@ -236,7 +267,34 @@ function ReservationCard({ reservation }: { reservation: PassagerReservation }) 
             </button>
           </div>
         )}
+
+        {reservation.statut === "completed" && !rated && conducteur && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowRateModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+            >
+              <Star className="size-3" />
+              Noter ton trajet
+            </button>
+          </div>
+        )}
       </div>
+
+      {showRateModal && conducteur && (
+        <RateTripModal
+          reservationId={reservation.id}
+          otherPrenom={conducteur.prenom}
+          otherName={`${conducteur.prenom} ${conducteur.nom}`}
+          otherAvatarUrl={conducteur.photo_url}
+          onClose={() => setShowRateModal(false)}
+          onDone={() => {
+            setShowRateModal(false);
+            setRated(true);
+          }}
+        />
+      )}
     </li>
   );
 }

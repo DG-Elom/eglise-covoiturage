@@ -4,6 +4,8 @@ import { AppHeader } from "@/components/app-header";
 import { RechercheForm } from "./form";
 import { TrajetsDisponibles, type TrajetDisponible } from "./trajets-disponibles";
 
+export type ConducteurRating = { avg: number | null; count: number };
+
 export default async function RecherchePage() {
   const supabase = await createClient();
   const {
@@ -41,6 +43,24 @@ export default async function RecherchePage() {
 
   const instances = (instancesRaw ?? []) as unknown as TrajetDisponible[];
 
+  const { data: ratingsData } = await supabase
+    .from("trip_ratings")
+    .select("rated_id, stars");
+
+  const conducteurRatings: Record<string, ConducteurRating> = {};
+  if (ratingsData && ratingsData.length > 0) {
+    const grouped: Record<string, number[]> = {};
+    for (const row of ratingsData) {
+      const arr = grouped[row.rated_id] ?? [];
+      arr.push(row.stars);
+      grouped[row.rated_id] = arr;
+    }
+    for (const [userId, stars] of Object.entries(grouped)) {
+      const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
+      conducteurRatings[userId] = { avg, count: stars.length };
+    }
+  }
+
   return (
     <>
       <AppHeader
@@ -59,8 +79,12 @@ export default async function RecherchePage() {
           Saisis ton adresse et le culte concerné, ou parcours simplement les trajets
           déjà proposés ci-dessous.
         </p>
-        <RechercheForm passagerId={profile.id} cultes={cultes ?? []} />
-        <TrajetsDisponibles instances={instances} />
+        <RechercheForm
+          passagerId={profile.id}
+          cultes={cultes ?? []}
+          conducteurRatings={conducteurRatings}
+        />
+        <TrajetsDisponibles instances={instances} conducteurRatings={conducteurRatings} />
       </main>
     </>
   );

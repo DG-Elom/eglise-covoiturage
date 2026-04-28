@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { Car, Search, Plus, AlertCircle, Megaphone, Hand } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
-import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
+import { OnlineToggle } from "@/components/online-toggle";
+import { ActionCard } from "./action-card";
+import { ConducteurSection, type ConducteurTrajet, type RatingInfo } from "./conducteur-section";
 import { PassagerSection, type PassagerReservation } from "./passager-section";
 import {
   MesDemandesSection,
@@ -23,7 +25,9 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("prenom, role, is_admin, photo_url")
+    .select(
+      "prenom, role, is_admin, photo_url, available_now, available_until, emergency_contact_name, emergency_contact_phone",
+    )
     .eq("id", user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
@@ -58,6 +62,32 @@ export default async function DashboardPage() {
       .eq("actif", true)
       .gte("trajets_instances.date", past14);
     mesTrajets = (data ?? []) as unknown as ConducteurTrajet[];
+  }
+
+  let alreadyRatedIdsAsConduct: string[] = [];
+  let passagerRatings: Map<string, RatingInfo> = new Map();
+  if (peutConduire) {
+    const { data: myRatings } = await supabase
+      .from("trip_ratings")
+      .select("reservation_id")
+      .eq("rater_id", user.id);
+    alreadyRatedIdsAsConduct = (myRatings ?? []).map((r) => r.reservation_id);
+
+    const { data: ratingsData } = await supabase
+      .from("trip_ratings")
+      .select("rated_id, stars");
+    if (ratingsData && ratingsData.length > 0) {
+      const grouped = new Map<string, number[]>();
+      for (const row of ratingsData) {
+        const arr = grouped.get(row.rated_id) ?? [];
+        arr.push(row.stars);
+        grouped.set(row.rated_id, arr);
+      }
+      for (const [userId, stars] of grouped.entries()) {
+        const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
+        passagerRatings.set(userId, { avg, count: stars.length });
+      }
+    }
   }
 
   const [{ count: nbConducteurs }, { count: nbPassagers }] = await Promise.all([
@@ -108,6 +138,7 @@ export default async function DashboardPage() {
   }
 
   let mesReservations: PassagerReservation[] = [];
+  let alreadyRatedIds: string[] = [];
   if (peutVoyager) {
     const { data } = await supabase
       .from("reservations")
@@ -132,6 +163,12 @@ export default async function DashboardPage() {
       .gte("trajets_instances.date", today)
       .order("demande_le", { ascending: false });
     mesReservations = (data ?? []) as unknown as PassagerReservation[];
+
+    const { data: ratings } = await supabase
+      .from("trip_ratings")
+      .select("reservation_id")
+      .eq("rater_id", user.id);
+    alreadyRatedIds = (ratings ?? []).map((r) => r.reservation_id);
   }
 
   return (
@@ -204,6 +241,15 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {peutConduire && (
+        <div className="mt-4">
+          <OnlineToggle
+            initialAvailable={!!profile.available_now}
+            initialUntil={profile.available_until}
+          />
+        </div>
+      )}
+
       {peutConduire && demandesProches.length > 0 && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -223,7 +269,11 @@ export default async function DashboardPage() {
             <Car className="size-5 text-emerald-600 dark:text-emerald-400" />
             Mes trajets proposés
           </h2>
-          <ConducteurSection trajets={mesTrajets} />
+          <ConducteurSection
+            trajets={mesTrajets}
+            alreadyRatedIds={alreadyRatedIdsAsConduct}
+            passagerRatings={passagerRatings}
+          />
         </section>
       )}
 
@@ -243,7 +293,12 @@ export default async function DashboardPage() {
             <Search className="size-5 text-emerald-600 dark:text-emerald-400" />
             Mes demandes de trajet
           </h2>
-          <PassagerSection reservations={mesReservations} />
+          <PassagerSection
+            reservations={mesReservations}
+            alreadyRatedIds={alreadyRatedIds}
+            emergencyName={profile.emergency_contact_name}
+            emergencyPhone={profile.emergency_contact_phone}
+          />
         </section>
       )}
       </main>
@@ -251,30 +306,3 @@ export default async function DashboardPage() {
   );
 }
 
-function ActionCard({
-  href,
-  icon,
-  title,
-  tone,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  tone: "emerald" | "slate";
-}) {
-  const styles =
-    tone === "emerald"
-      ? "border-emerald-200 bg-emerald-50 hover:border-emerald-400 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:border-emerald-600"
-      : "border-slate-200 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-500";
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${styles}`}
-    >
-      <div className="inline-flex size-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
-        {icon}
-      </div>
-      <span className="font-medium">{title}</span>
-    </Link>
-  );
-}
