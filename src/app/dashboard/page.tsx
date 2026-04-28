@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "prenom, role, is_admin, photo_url, available_now, available_until, emergency_contact_name, emergency_contact_phone",
+      "prenom, nom, role, is_admin, photo_url, available_now, available_until, emergency_contact_name, emergency_contact_phone",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -298,6 +298,9 @@ export default async function DashboardPage() {
             alreadyRatedIds={alreadyRatedIds}
             emergencyName={profile.emergency_contact_name}
             emergencyPhone={profile.emergency_contact_phone}
+            myPrenom={profile.prenom}
+            myNom={profile.nom ?? ""}
+            myPhotoUrl={profile.photo_url}
           />
         </section>
       )}

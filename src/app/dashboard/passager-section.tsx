@@ -12,6 +12,7 @@ import { confirmToast } from "@/lib/confirm";
 import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
 import { RateTripModal } from "@/components/rate-trip-modal";
+import { PassagerRouteView } from "@/components/passager-route-view";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
   pending: {
@@ -71,11 +72,17 @@ export function PassagerSection({
   alreadyRatedIds,
   emergencyName,
   emergencyPhone,
+  myPrenom,
+  myNom,
+  myPhotoUrl,
 }: {
   reservations: PassagerReservation[];
   alreadyRatedIds: string[];
   emergencyName?: string | null;
   emergencyPhone?: string | null;
+  myPrenom: string;
+  myNom: string;
+  myPhotoUrl: string | null;
 }) {
   if (reservations.length === 0) {
     return (
@@ -94,6 +101,9 @@ export function PassagerSection({
           initiallyRated={alreadyRatedIds.includes(r.id)}
           emergencyName={emergencyName}
           emergencyPhone={emergencyPhone}
+          myPrenom={myPrenom}
+          myNom={myNom}
+          myPhotoUrl={myPhotoUrl}
         />
       ))}
     </ul>
@@ -105,11 +115,17 @@ function ReservationCard({
   initiallyRated,
   emergencyName,
   emergencyPhone,
+  myPrenom,
+  myNom,
+  myPhotoUrl,
 }: {
   reservation: PassagerReservation;
   initiallyRated: boolean;
   emergencyName?: string | null;
   emergencyPhone?: string | null;
+  myPrenom: string;
+  myNom: string;
+  myPhotoUrl: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -229,6 +245,21 @@ function ReservationCard({
                   emergencyPhone={emergencyPhone}
                   trajetInstanceId={inst.id}
                   pickupAdresse={reservation.pickup_adresse}
+                />
+              </div>
+            )}
+
+            {inst && trajet && (
+              <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                <PassagerRouteView
+                  trajetInstanceId={inst.id}
+                  conducteurAdresse={trajet.depart_adresse}
+                  heureDepart={trajet.heure_depart}
+                  myReservationId={reservation.id}
+                  myPrenom={myPrenom}
+                  myNom={myNom}
+                  myPhotoUrl={myPhotoUrl}
+                  myPickupAdresse={reservation.pickup_adresse}
                 />
               </div>
             )}

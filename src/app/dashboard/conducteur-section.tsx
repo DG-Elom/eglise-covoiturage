@@ -15,6 +15,7 @@ import {
   Pencil,
   MessageCircle,
   Star,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -389,7 +390,7 @@ function ReservationRow({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<
-    "accept" | "refuse" | "completed" | "no_show" | null
+    "accept" | "refuse" | "completed" | "no_show" | "revert" | null
   >(null);
   const [rated, setRated] = useState(initiallyRated);
   const [showRateModal, setShowRateModal] = useState(false);
@@ -411,6 +412,27 @@ function ReservationRow({
       reservation.id,
     );
     toast.success(statut === "accepted" ? "Demande acceptée" : "Demande refusée");
+    router.refresh();
+  }
+
+  async function revertToPending() {
+    const ok = await confirmToast(
+      "Remettre cette réservation en attente ? Le passager devra à nouveau être confirmé.",
+      { confirmLabel: "Remettre en attente" },
+    );
+    if (!ok) return;
+    setLoading("revert");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("reservations")
+      .update({ statut: "pending", traitee_le: null } as never)
+      .eq("id", reservation.id);
+    setLoading(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Remise en attente");
     router.refresh();
   }
 
@@ -490,9 +512,26 @@ function ReservationRow({
             Terminée
           </span>
         ) : (
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-            Acceptée
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+              Acceptée
+            </span>
+            {!isPast && (
+              <button
+                type="button"
+                onClick={revertToPending}
+                disabled={loading !== null}
+                title="Remettre en attente"
+                className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-300"
+              >
+                {loading === "revert" ? (
+                  <span className="text-[10px]">…</span>
+                ) : (
+                  <Clock className="size-3.5" />
+                )}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
