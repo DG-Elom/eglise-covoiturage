@@ -7,6 +7,7 @@ import {
   emailReservationRefusee,
   emailTrajetAnnuleParConducteur,
 } from "@/lib/email/templates";
+import { sendPushTo } from "@/lib/push";
 
 type NotifyKind =
   | "reservation_created"
@@ -164,5 +165,32 @@ export async function POST(req: NextRequest) {
   else tpl = emailReservationRefusee(data);
 
   const result = await sendEmail(adminData.email, tpl.subject, tpl.html);
+
+  // Push notification (fire-and-forget — n'échoue pas la requête)
+  const pushTitle =
+    body.kind === "reservation_created"
+      ? "Nouvelle réservation"
+      : body.kind === "reservation_accepted"
+        ? "Réservation acceptée"
+        : body.kind === "reservation_refused"
+          ? "Réservation refusée"
+          : "Trajet annulé";
+  const pushBody =
+    body.kind === "reservation_created"
+      ? `${data.passagerPrenom} ${data.passagerNom} — ${data.programmeLibelle} (${data.date})`
+      : body.kind === "reservation_accepted"
+        ? `${data.conducteurPrenom} ${data.conducteurNom} a accepté votre demande pour le ${data.date}`
+        : body.kind === "reservation_refused"
+          ? `${data.conducteurPrenom} ${data.conducteurNom} a refusé votre demande pour le ${data.date}`
+          : `Le trajet du ${data.date} a été annulé par le conducteur`;
+
+  void sendPushTo(recipientId, {
+    title: pushTitle,
+    body: pushBody,
+    url: `${appUrl}/dashboard`,
+  }).catch((err) => {
+    console.warn("[notify] push failed", err);
+  });
+
   return NextResponse.json(result);
 }

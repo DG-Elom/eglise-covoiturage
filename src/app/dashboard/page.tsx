@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Car, Search, Plus, ShieldCheck, User } from "lucide-react";
+import { Car, Search, Plus, ShieldCheck, User, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/avatar";
 import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
 import { PassagerSection, type PassagerReservation } from "./passager-section";
 import { LogoutButton } from "./logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PushSubscribe } from "@/components/push-subscribe";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -107,12 +108,20 @@ export default async function DashboardPage() {
             </Link>
           )}
           <Link
+            href="/calendrier"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <Calendar className="size-3.5" />
+            Calendrier
+          </Link>
+          <Link
             href="/profil"
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <User className="size-3.5" />
             Profil
           </Link>
+          <PushSubscribe />
           <LogoutButton />
           <ThemeToggle />
         </div>

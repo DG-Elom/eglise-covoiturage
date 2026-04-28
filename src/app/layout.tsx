@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { pwaMetadata } from "@/components/pwa-meta";
+import { SwRegister } from "@/components/sw-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
           <QueryProvider>
+            <SwRegister />
             {children}
             <Toaster richColors position="top-center" />
           </QueryProvider>
