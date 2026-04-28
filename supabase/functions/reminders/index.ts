@@ -61,19 +61,53 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// Fenêtre cible : départ entre now+1h45 et now+2h15 (en Europe/Paris).
-// Note : on suppose UTC+1 (hiver) pour v1. Voir caveat dans REMINDERS.md.
-const FR_OFFSET_HOURS = 1;
+// Fuseau horaire de l'église, configurable. Défaut: Africa/Abidjan (GMT+0, sans DST).
+// Pour la France: REMINDERS_TZ=Europe/Paris (gère DST automatiquement).
+const REMINDERS_TZ = Deno.env.get("REMINDERS_TZ") ?? "Africa/Abidjan";
 
 const pad = (n: number): string => n.toString().padStart(2, "0");
 
-// Convertit (date 'YYYY-MM-DD', heure 'HH:MM[:SS]') interprétée en Europe/Paris
-// en timestamp UTC (ms).
+// Convertit une "wall time" (date YYYY-MM-DD + heure HH:MM) interprétée
+// dans REMINDERS_TZ en timestamp UTC (ms). Gère DST proprement.
 const toUtcMs = (date: string, heure: string): number => {
   const [y, mo, d] = date.split("-").map(Number);
   const [h, mi] = heure.split(":").map(Number);
-  // Date.UTC traite les arguments comme UTC. On retire l'offset FR pour obtenir l'UTC réel.
-  return Date.UTC(y, mo - 1, d, h - FR_OFFSET_HOURS, mi, 0, 0);
+  const targetWallMs = Date.UTC(y, mo - 1, d, h, mi, 0, 0);
+
+  // Première estimation : on traite la wall time comme si elle était UTC.
+  let utcMs = targetWallMs;
+
+  // On itère 2x pour converger même près d'une transition DST.
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: REMINDERS_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  for (let i = 0; i < 2; i++) {
+    const parts = Object.fromEntries(
+      fmt
+        .formatToParts(new Date(utcMs))
+        .filter((p) => p.type !== "literal")
+        .map((p) => [p.type, p.value]),
+    );
+    const tzWallMs = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour) === 24 ? 0 : Number(parts.hour),
+      Number(parts.minute),
+    );
+    const diff = targetWallMs - tzWallMs;
+    if (diff === 0) break;
+    utcMs += diff;
+  }
+
+  return utcMs;
 };
 
 const dateRangeForQuery = (now: Date): { dateMin: string; dateMax: string } => {
