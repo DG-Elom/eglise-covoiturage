@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
@@ -40,15 +40,33 @@ export function NouveauTrajetForm({
   cultes: Culte[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [adresse, setAdresse] = useState<GeocodeResult | null>(null);
-  const [culteId, setCulteId] = useState<string>(cultes[0]?.id ?? "");
-  const [sens, setSens] = useState<Sens>("aller_retour");
+  const initialCulteId =
+    searchParams.get("culte") &&
+    cultes.some((c) => c.id === searchParams.get("culte"))
+      ? (searchParams.get("culte") as string)
+      : cultes[0]?.id ?? "";
+  const initialSens =
+    (searchParams.get("sens") as Sens | null) ?? "aller_retour";
+  const initialDate = searchParams.get("date");
+  const [culteId, setCulteId] = useState<string>(initialCulteId);
+  const [sens, setSens] = useState<Sens>(initialSens);
   const [places, setPlaces] = useState(2);
   const [rayon, setRayon] = useState(5);
   const [heureDepart, setHeureDepart] = useState("08:00");
-  const [datesSelected, setDatesSelected] = useState<Set<string>>(new Set());
+  const [datesSelected, setDatesSelected] = useState<Set<string>>(
+    initialDate ? new Set([initialDate]) : new Set(),
+  );
+
+  useEffect(() => {
+    if (initialDate && datesSelected.size === 1 && datesSelected.has(initialDate)) {
+      toast.message(`Trajet pré-rempli depuis une demande passager.`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [aiText, setAiText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
 

@@ -236,6 +236,99 @@ export function RechercheForm({
           reserving={reserving}
         />
       )}
+
+      {results !== null && results.length === 0 && adresse && culteId && date && (
+        <PublierDemande
+          adresse={adresse}
+          culteId={culteId}
+          date={date}
+          sens={sens}
+        />
+      )}
+    </div>
+  );
+}
+
+function PublierDemande({
+  adresse,
+  culteId,
+  date,
+  sens,
+}: {
+  adresse: GeocodeResult;
+  culteId: string;
+  date: string;
+  sens: Sens;
+}) {
+  const router = useRouter();
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+
+  async function publier() {
+    setPublishing(true);
+    try {
+      const res = await fetch("/api/demandes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          culte_id: culteId,
+          date,
+          sens,
+          pickup_adresse: adresse.address,
+          pickup_lat: adresse.lat,
+          pickup_lng: adresse.lng,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(data.error ?? "Échec de la publication");
+        setPublishing(false);
+        return;
+      }
+      setPublished(true);
+      toast.success("Demande publiée. Les conducteurs ont été prévenus.");
+      setTimeout(() => router.push("/dashboard"), 1500);
+    } catch {
+      toast.error("Erreur réseau");
+      setPublishing(false);
+    }
+  }
+
+  if (published) {
+    return (
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40">
+        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+          ✅ Ta demande est publiée
+        </p>
+        <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
+          Tu seras notifié dès qu&apos;un conducteur peut t&apos;aider.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+      <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+        Personne ne passe encore par chez toi 😕
+      </p>
+      <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+        Publie ta demande pour que les conducteurs ICC Metz soient prévenus.
+        Si quelqu&apos;un peut t&apos;aider, tu seras notifié.
+      </p>
+      <button
+        type="button"
+        onClick={publier}
+        disabled={publishing}
+        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50 transition"
+      >
+        {publishing ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          "📢"
+        )}
+        Publier ma demande
+      </button>
     </div>
   );
 }

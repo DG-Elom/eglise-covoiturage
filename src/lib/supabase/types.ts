@@ -175,6 +175,37 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["reservations"]["Insert"]>;
         Relationships: [];
       };
+      demandes_passager: {
+        Row: {
+          id: string;
+          passager_id: string;
+          culte_id: string;
+          date: string;
+          sens: "aller" | "retour";
+          pickup_adresse: string;
+          pickup_position: unknown;
+          notes: string | null;
+          statut: "active" | "matched" | "annulee";
+          matched_trajet_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          passager_id: string;
+          culte_id: string;
+          date: string;
+          sens: "aller" | "retour";
+          pickup_adresse: string;
+          pickup_position: string;
+          notes?: string | null;
+          statut?: "active" | "matched" | "annulee";
+          matched_trajet_id?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["demandes_passager"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

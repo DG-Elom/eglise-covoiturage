@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Car, Search, Plus, AlertCircle } from "lucide-react";
+import { Car, Search, Plus, AlertCircle, Megaphone, Hand } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { ConducteurSection, type ConducteurTrajet } from "./conducteur-section";
 import { PassagerSection, type PassagerReservation } from "./passager-section";
+import {
+  MesDemandesSection,
+  type DemandePassagerRow,
+} from "./mes-demandes-section";
+import {
+  DemandesProchesSection,
+  type DemandeProcheRow,
+} from "./demandes-proches-section";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -66,6 +74,38 @@ export default async function DashboardPage() {
     (nbPassagers ?? 0) >= 3 &&
     (nbConducteurs ?? 0) > 0 &&
     (nbPassagers ?? 0) >= (nbConducteurs ?? 0) * 2;
+
+  let mesDemandes: DemandePassagerRow[] = [];
+  if (peutVoyager) {
+    const { data } = await supabase
+      .from("demandes_passager")
+      .select(
+        `id, date, sens, pickup_adresse, statut, created_at,
+         culte:cultes (libelle, heure)`,
+      )
+      .eq("passager_id", user.id)
+      .gte("date", today)
+      .order("date", { ascending: true });
+    mesDemandes = (data ?? []) as unknown as DemandePassagerRow[];
+  }
+
+  let demandesProches: DemandeProcheRow[] = [];
+  if (peutConduire) {
+    const { data } = await supabase
+      .from("demandes_passager")
+      .select(
+        `id, date, sens, pickup_adresse, notes, created_at,
+         passager:profiles!demandes_passager_passager_id_fkey (
+           id, prenom, nom, telephone, photo_url
+         ),
+         culte:cultes (id, libelle, heure)`,
+      )
+      .eq("statut", "active")
+      .gte("date", today)
+      .neq("passager_id", user.id)
+      .order("date", { ascending: true });
+    demandesProches = (data ?? []) as unknown as DemandeProcheRow[];
+  }
 
   let mesReservations: PassagerReservation[] = [];
   if (peutVoyager) {
@@ -164,6 +204,19 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {peutConduire && demandesProches.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Hand className="size-5 text-amber-600 dark:text-amber-400" />
+            Fidèles qui cherchent un trajet
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+              {demandesProches.length}
+            </span>
+          </h2>
+          <DemandesProchesSection demandes={demandesProches} />
+        </section>
+      )}
+
       {peutConduire && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -171,6 +224,16 @@ export default async function DashboardPage() {
             Mes trajets proposés
           </h2>
           <ConducteurSection trajets={mesTrajets} />
+        </section>
+      )}
+
+      {peutVoyager && mesDemandes.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Megaphone className="size-5 text-emerald-600 dark:text-emerald-400" />
+            Mes demandes publiées
+          </h2>
+          <MesDemandesSection demandes={mesDemandes} />
         </section>
       )}
 
