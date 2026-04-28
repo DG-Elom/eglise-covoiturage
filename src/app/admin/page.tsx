@@ -1,72 +1,19 @@
-import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { AppHeader } from "@/components/app-header";
-import { ProgrammesSection } from "./programmes-section";
-import { SignalementsSection, type SignalementRow } from "./signalements-section";
 import { StatsSection } from "./stats-section";
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin, prenom, nom, photo_url")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile) redirect("/onboarding");
-  if (!profile.is_admin) redirect("/dashboard");
-
-  const [{ data: cultes }, { data: signalements }, stats] = await Promise.all([
-    supabase
-      .from("cultes")
-      .select("id, libelle, jour_semaine, heure, actif")
-      .order("jour_semaine"),
-    supabase
-      .from("signalements")
-      .select(
-        `
-        id, motif, description, statut, created_at, ia_gravite, ia_action_suggeree,
-        auteur:profiles!signalements_auteur_id_fkey (id, prenom, nom, photo_url),
-        cible:profiles!signalements_cible_id_fkey (id, prenom, nom, suspended, photo_url)
-      `,
-      )
-      .order("created_at", { ascending: false }),
-    loadStats(supabase),
-  ]);
+  const stats = await loadStats(supabase);
 
   return (
-    <>
-      <AppHeader
-        title="Administration"
-        back={{ href: "/dashboard" }}
-        user={{
-          prenom: profile.prenom,
-          nom: profile.nom,
-          email: user.email,
-          photoUrl: profile.photo_url,
-        }}
-        isAdmin
-      />
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-          <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
-          Gestion des programmes, modération et statistiques.
-        </div>
-
-        <div className="space-y-10">
-          <StatsSection stats={stats} />
-          <ProgrammesSection programmes={cultes ?? []} />
-          <SignalementsSection
-            signalements={(signalements ?? []) as unknown as SignalementRow[]}
-          />
-        </div>
-      </main>
-    </>
+    <div className="space-y-8">
+      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+        <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+        Vue d&apos;ensemble · Stats globales de la plateforme.
+      </div>
+      <StatsSection stats={stats} />
+    </div>
   );
 }
 
