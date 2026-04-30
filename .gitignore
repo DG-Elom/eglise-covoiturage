@@ -51,3 +51,6 @@ next-env.d.ts
 # supabase CLI local cache
 supabase/.temp/
 supabase/.branches/
+
+# scratchpad (communication inter-agents, non versionnée)
+scratchpad/
