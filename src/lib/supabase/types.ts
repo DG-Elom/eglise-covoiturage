@@ -425,6 +425,19 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_top_score: {
+        Row: {
+          user_id: string;
+          trajets_proposes: number;
+          demandes_recues: number;
+          demandes_acceptees: number;
+          passagers_transportes: number;
+          km_detour_consenti: number;
+          median_minutes_reponse: number | null;
+          taux_acceptation: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       trajets_compatibles: {

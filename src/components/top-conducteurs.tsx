@@ -2,9 +2,57 @@
 
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar";
-import type { TopConducteur, TopConducteursResponse } from "@/app/api/top-conducteurs/route";
+import type {
+  TopConducteur,
+  TopConducteursResponse,
+} from "@/app/api/top-conducteurs/route";
 
 const MEDALS = ["🥇", "🥈", "🥉"] as const;
+
+type Highlight = {
+  icon: string;
+  label: string;
+};
+
+function getHighlight(
+  conducteur: TopConducteur,
+  all: TopConducteur[],
+): Highlight {
+  const maxPassagers = Math.max(...all.map((c) => c.passagersTransportes));
+  const maxDetour = Math.max(...all.map((c) => c.kmDetourConsenti));
+  const maxTrajets = Math.max(...all.map((c) => c.trajetsProposes));
+
+  const isTopPassagers =
+    conducteur.passagersTransportes === maxPassagers && maxPassagers > 0;
+  const isTopDetour =
+    conducteur.kmDetourConsenti === maxDetour && maxDetour > 0;
+  const isTopTrajets =
+    conducteur.trajetsProposes === maxTrajets && maxTrajets > 0;
+
+  if (isTopPassagers) {
+    return {
+      icon: "🚀",
+      label: `${conducteur.passagersTransportes} passager${conducteur.passagersTransportes > 1 ? "s" : ""} ce mois`,
+    };
+  }
+  if (isTopDetour) {
+    return {
+      icon: "🛣️",
+      label: `${conducteur.kmDetourConsenti.toFixed(1)} km de détour`,
+    };
+  }
+  if (isTopTrajets) {
+    return {
+      icon: "📅",
+      label: `${conducteur.trajetsProposes} trajet${conducteur.trajetsProposes > 1 ? "s" : ""} proposé${conducteur.trajetsProposes > 1 ? "s" : ""}`,
+    };
+  }
+
+  return {
+    icon: "🚀",
+    label: `${conducteur.passagersTransportes} passager${conducteur.passagersTransportes > 1 ? "s" : ""} ce mois`,
+  };
+}
 
 function TopConducteursSkeleton() {
   return (
@@ -25,11 +73,15 @@ function TopConducteursSkeleton() {
 function ConducteurCard({
   conducteur,
   rank,
+  all,
 }: {
   conducteur: TopConducteur;
   rank: number;
+  all: TopConducteur[];
 }) {
   const medal = MEDALS[rank] ?? "";
+  const highlight = getHighlight(conducteur, all);
+
   return (
     <div className="flex flex-col items-center gap-1.5 text-center">
       <span className="text-lg leading-none" aria-label={`${rank + 1}e place`}>
@@ -47,7 +99,8 @@ function ConducteurCard({
           {conducteur.prenom}
         </p>
         <p className="text-[11px] text-slate-500 dark:text-slate-400">
-          {conducteur.trajetsCeMois} trajet{conducteur.trajetsCeMois > 1 ? "s" : ""}
+          <span aria-hidden="true">{highlight.icon} </span>
+          {highlight.label}
         </p>
       </div>
     </div>
@@ -85,7 +138,12 @@ export function TopConducteurs() {
       </h2>
       <div className="flex gap-6">
         {top.map((conducteur, i) => (
-          <ConducteurCard key={conducteur.id} conducteur={conducteur} rank={i} />
+          <ConducteurCard
+            key={conducteur.id}
+            conducteur={conducteur}
+            rank={i}
+            all={top}
+          />
         ))}
       </div>
     </div>
