@@ -45,7 +45,11 @@ export async function updateSession(request: NextRequest) {
     target.pathname === "/" ||
     isAuthRoute ||
     target.pathname.startsWith("/lancement") ||
-    target.pathname.startsWith("/legal");
+    target.pathname.startsWith("/legal") ||
+    target.pathname.startsWith("/track/") ||
+    target.pathname.startsWith("/api/track/position/") ||
+    target.pathname.startsWith("/api/internal/") ||
+    target.pathname.startsWith("/u/");
 
   if (!user && !isPublicRoute) {
     target.pathname = "/login";
