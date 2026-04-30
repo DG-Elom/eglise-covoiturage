@@ -117,7 +117,7 @@ async function notifyConducteurs(demandeId: string) {
   const { sendPushTo } = await import("@/lib/push");
   await Promise.all(
     conducteurIds.map((id) =>
-      sendPushTo(id, { title, body, url: "/dashboard" }).catch(() => {}),
+      sendPushTo(id, "new_request", { title, body, url: "/dashboard" }).catch(() => {}),
     ),
   );
 }

@@ -1,6 +1,11 @@
 // Email helpers — Deno-compatible (Supabase Edge Functions runtime)
 // Pas de dépendance npm/React Email : strings HTML simples.
 
+export interface Verset {
+  reference: string;
+  texte: string;
+}
+
 export interface ConducteurEmailData {
   prenom: string;
   programme: string;
@@ -42,7 +47,16 @@ const escapeHtml = (s: string): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-export const renderConducteurEmail = (data: ConducteurEmailData): { subject: string; html: string } => {
+const versetHtml = (v: Verset): string =>
+  `<div style="margin-top:24px; padding:16px; background:#f0fdf4; border-left:4px solid #10b981; border-radius:8px;">
+  <p style="margin:0; font-style:italic; color:#065f46; font-size:14px;">&laquo;&nbsp;${escapeHtml(v.texte)}&nbsp;&raquo;</p>
+  <p style="margin:6px 0 0 0; font-weight:600; color:#047857; font-size:12px;">— ${escapeHtml(v.reference)}</p>
+</div>`;
+
+export const renderConducteurEmail = (
+  data: ConducteurEmailData,
+  verset: Verset,
+): { subject: string; html: string } => {
   const subject = "Trajet dans 2h";
   const passagersList =
     data.passagers.length === 0
@@ -65,12 +79,16 @@ export const renderConducteurEmail = (data: ConducteurEmailData): { subject: str
   <p><strong>${data.passagers.length} passager(s)</strong> à récupérer :</p>
   <ul>${passagersList}</ul>
   <p>Merci pour ton service. Bonne route !</p>
+  ${versetHtml(verset)}
 </body></html>`;
 
   return { subject, html };
 };
 
-export const renderPassagerEmail = (data: PassagerEmailData): { subject: string; html: string } => {
+export const renderPassagerEmail = (
+  data: PassagerEmailData,
+  verset: Verset,
+): { subject: string; html: string } => {
   const subject = "Trajet dans 2h";
   const voiture =
     data.voitureModele || data.voitureCouleur
@@ -91,6 +109,7 @@ export const renderPassagerEmail = (data: PassagerEmailData): { subject: string;
     <li><strong>Téléphone conducteur :</strong> ${escapeHtml(data.conducteurTelephone)}</li>
   </ul>
   <p>Sois prêt(e) 5 minutes avant. Bon culte !</p>
+  ${versetHtml(verset)}
 </body></html>`;
 
   return { subject, html };

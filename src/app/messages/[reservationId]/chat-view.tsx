@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { playNotifSound } from "@/lib/notification-sound";
 
 export type ChatMessage = {
   id: string;
@@ -77,6 +78,7 @@ export function ChatView({
             prev.some((p) => p.id === m.id) ? prev : [...prev, m],
           );
           if (m.expediteur_id !== currentUserId) {
+            void playNotifSound("message");
             void supabase
               .from("messages")
               .update({ lu: true })

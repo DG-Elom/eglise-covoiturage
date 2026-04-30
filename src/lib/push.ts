@@ -2,6 +2,9 @@ import "server-only";
 import webpush, { type PushSubscription as WebPushSubscription } from "web-push";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { shouldSendPush, type NotifKind, type NotifPrefs } from "@/lib/notification-preferences";
+
+export type { NotifKind };
 
 export type PushPayload = {
   title: string;
@@ -41,10 +44,38 @@ type SubRow = {
   auth: string;
 };
 
-export async function sendPushTo(userId: string, payload: PushPayload): Promise<void> {
+type NotifPrefsRow = {
+  reminder_2h: boolean;
+  imminent_departure: boolean;
+  new_request: boolean;
+  decision: boolean;
+  trajet_cancelled: boolean;
+  new_message: boolean;
+  thanks_received: boolean;
+  weekly_summary_admin: boolean;
+};
+
+async function fetchNotifPrefs(admin: ReturnType<typeof serviceClient>, userId: string): Promise<NotifPrefs | null> {
+  if (!admin) return null;
+  const { data, error } = await admin
+    .from("notification_preferences")
+    .select(
+      "reminder_2h, imminent_departure, new_request, decision, trajet_cancelled, new_message, thanks_received, weekly_summary_admin",
+    )
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as NotifPrefsRow;
+}
+
+export async function sendPushTo(userId: string, kind: NotifKind, payload: PushPayload): Promise<void> {
   if (!configureVapid()) return;
   const admin = serviceClient();
   if (!admin) return;
+
+  const prefs = await fetchNotifPrefs(admin, userId);
+  if (!shouldSendPush(prefs, kind)) return;
 
   const { data, error } = await admin
     .from("push_subscriptions")

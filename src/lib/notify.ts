@@ -2,7 +2,8 @@ type NotifyKind =
   | "reservation_created"
   | "reservation_accepted"
   | "reservation_refused"
-  | "trajet_date_cancelled";
+  | "trajet_date_cancelled"
+  | "thanks_received";
 
 export async function notify(kind: NotifyKind, reservationId: string) {
   try {

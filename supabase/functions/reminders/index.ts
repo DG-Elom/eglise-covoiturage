@@ -10,6 +10,7 @@ import {
   renderPassagerEmail,
   sendResend,
 } from "./_email.ts";
+import { getDailyVerse } from "./_bible.ts";
 
 interface CulteRow {
   id: string;
@@ -60,6 +61,30 @@ const FROM_EMAIL = Deno.env.get("REMINDERS_FROM_EMAIL") ?? "Covoiturage <noreply
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const APP_URL = Deno.env.get("APP_URL") ?? "https://app.icc-covoit.fr";
+const INTERNAL_PUSH_SECRET = Deno.env.get("INTERNAL_PUSH_SECRET") ?? "";
+
+const sendInternalPush = async (
+  userId: string,
+  kind: string,
+  title: string,
+  body: string,
+  url: string,
+): Promise<void> => {
+  if (!INTERNAL_PUSH_SECRET) return;
+  try {
+    await fetch(`${APP_URL}/api/internal/send-push`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-secret": INTERNAL_PUSH_SECRET,
+      },
+      body: JSON.stringify({ userId, kind, payload: { title, body, url } }),
+    });
+  } catch (e) {
+    console.warn("[reminders] push interne échoué", e);
+  }
+};
 
 // Fuseau horaire de l'église, configurable. Défaut: Africa/Abidjan (GMT+0, sans DST).
 // Pour la France: REMINDERS_TZ=Europe/Paris (gère DST automatiquement).
@@ -175,6 +200,7 @@ const processInstance = async (
   client: SupabaseClient,
   instance: InstanceRow,
   summary: RunSummary,
+  verset: { reference: string; texte: string },
 ): Promise<void> => {
   const trajet = instance.trajet;
   if (!trajet || !trajet.heure_depart || !trajet.culte) return;
@@ -249,15 +275,26 @@ const processInstance = async (
           })
           .filter((x): x is NonNullable<typeof x> => x !== null);
 
-        const { subject, html } = renderConducteurEmail({
-          prenom: conducteurTyped.prenom,
-          programme,
-          date: dateAffichage,
-          heureDepart,
-          passagers: passagersForEmail,
-        });
+        const { subject, html } = renderConducteurEmail(
+          {
+            prenom: conducteurTyped.prenom,
+            programme,
+            date: dateAffichage,
+            heureDepart,
+            passagers: passagersForEmail,
+          },
+          verset,
+        );
         await sendResend(RESEND_API_KEY, FROM_EMAIL, conducteurEmail, subject, html);
         await logSent(client, instance.id, conducteurTyped.id, conducteurKind);
+        const nPassagers = reservations.length;
+        await sendInternalPush(
+          conducteurTyped.id,
+          "reminder_2h",
+          "🚗 Trajet dans 2h",
+          `${nPassagers} passager${nPassagers > 1 ? "s" : ""} vers ${programme} à ${heureDepart}`,
+          "/dashboard",
+        );
         summary.sent++;
       }
     }
@@ -285,20 +322,30 @@ const processInstance = async (
         summary.errors++;
         continue;
       }
-      const { subject, html } = renderPassagerEmail({
-        prenom: passager.prenom,
-        conducteurPrenom: conducteurTyped.prenom,
-        conducteurNom: conducteurTyped.nom,
-        programme,
-        date: dateAffichage,
-        heureDepart,
-        pickupAdresse: r.pickup_adresse,
-        voitureModele: conducteurTyped.voiture_modele,
-        voitureCouleur: conducteurTyped.voiture_couleur,
-        conducteurTelephone: conducteurTyped.telephone,
-      });
+      const { subject, html } = renderPassagerEmail(
+        {
+          prenom: passager.prenom,
+          conducteurPrenom: conducteurTyped.prenom,
+          conducteurNom: conducteurTyped.nom,
+          programme,
+          date: dateAffichage,
+          heureDepart,
+          pickupAdresse: r.pickup_adresse,
+          voitureModele: conducteurTyped.voiture_modele,
+          voitureCouleur: conducteurTyped.voiture_couleur,
+          conducteurTelephone: conducteurTyped.telephone,
+        },
+        verset,
+      );
       await sendResend(RESEND_API_KEY, FROM_EMAIL, passagerEmail, subject, html);
       await logSent(client, instance.id, passager.id, passagerKind);
+      await sendInternalPush(
+        passager.id,
+        "reminder_2h",
+        "🚗 Trajet dans 2h",
+        `RDV avec ${conducteurTyped.prenom} à ${heureDepart}`,
+        "/dashboard",
+      );
       summary.sent++;
     } catch (e) {
       console.error("passager send error", e);
@@ -322,6 +369,7 @@ const run = async (): Promise<RunSummary> => {
   });
 
   const now = new Date();
+  const verset = getDailyVerse(now);
   const lowerMs = now.getTime() + 105 * 60 * 1000; // +1h45
   const upperMs = now.getTime() + 135 * 60 * 1000; // +2h15
 
@@ -352,7 +400,7 @@ const run = async (): Promise<RunSummary> => {
     if (!trajet?.heure_depart) continue;
     const startMs = toUtcMs(inst.date, trajet.heure_depart);
     if (startMs >= lowerMs && startMs <= upperMs) {
-      await processInstance(client, inst, summary);
+      await processInstance(client, inst, summary, verset);
     }
   }
 

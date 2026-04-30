@@ -184,7 +184,14 @@ export async function POST(req: NextRequest) {
           ? `${data.conducteurPrenom} ${data.conducteurNom} a refusé votre demande pour le ${data.date}`
           : `Le trajet du ${data.date} a été annulé par le conducteur`;
 
-  void sendPushTo(recipientId, {
+  const pushKind =
+    body.kind === "reservation_created"
+      ? "new_request" as const
+      : body.kind === "reservation_accepted" || body.kind === "reservation_refused"
+        ? "decision" as const
+        : "trajet_cancelled" as const;
+
+  void sendPushTo(recipientId, pushKind, {
     title: pushTitle,
     body: pushBody,
     url: `${appUrl}/dashboard`,

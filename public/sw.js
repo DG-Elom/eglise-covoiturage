@@ -23,6 +23,7 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     data: { url: data.url || "/" },
+    vibrate: [180, 80, 180],
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

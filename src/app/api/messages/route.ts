@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
-  void sendPushTo(destinataire_id, {
+  void sendPushTo(destinataire_id, "new_message", {
     title: senderProfile?.prenom ?? "Nouveau message",
     body: trimmed.length > 120 ? trimmed.slice(0, 117) + "…" : trimmed,
     url: `/messages/${reservation_id}`,
