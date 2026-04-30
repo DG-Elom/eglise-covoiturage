@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Star,
   Clock,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ import { OptimizedRouteCard } from "@/components/optimized-route-card";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
 import { RateTripModal } from "@/components/rate-trip-modal";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
+import { SendThanksModal } from "@/components/send-thanks-modal";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const SENS_LABEL: Record<string, string> = {
@@ -394,6 +396,7 @@ function ReservationRow({
   >(null);
   const [rated, setRated] = useState(initiallyRated);
   const [showRateModal, setShowRateModal] = useState(false);
+  const [showThanksModal, setShowThanksModal] = useState(false);
 
   async function update(statut: "accepted" | "refused", action: "accept" | "refuse") {
     setLoading(action);
@@ -582,16 +585,28 @@ function ReservationRow({
         </div>
       )}
 
-      {reservation.statut === "completed" && !rated && (
-        <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => setShowRateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
-          >
-            <Star className="size-3" />
-            Noter ce passager
-          </button>
+      {reservation.statut === "completed" && (
+        <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800 flex flex-wrap gap-2">
+          {!rated && (
+            <button
+              type="button"
+              onClick={() => setShowRateModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+            >
+              <Star className="size-3" />
+              Noter ce passager
+            </button>
+          )}
+          {passager && (
+            <button
+              type="button"
+              onClick={() => setShowThanksModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800 hover:bg-emerald-100 transition dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+            >
+              <Heart className="size-3" />
+              Remercier
+            </button>
+          )}
         </div>
       )}
 
@@ -606,6 +621,19 @@ function ReservationRow({
             setShowRateModal(false);
             setRated(true);
           }}
+        />
+      )}
+
+      {showThanksModal && passager && (
+        <SendThanksModal
+          reservationId={reservation.id}
+          destinataire={{
+            id: passager.id,
+            prenom: passager.prenom,
+            nom: passager.nom,
+          }}
+          open={showThanksModal}
+          onClose={() => setShowThanksModal(false)}
         />
       )}
     </li>

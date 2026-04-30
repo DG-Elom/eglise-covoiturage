@@ -20,9 +20,13 @@ table `reminders_log` (un email = une ligne).
 - `reminder_2h_conducteur` pour le conducteur
 - `reminder_2h` pour chaque passager
 
-## Caveat fuseau horaire (v1)
+## Fuseau horaire
 
-Le calcul Europe/Paris suppose un offset **fixe UTC+1** (heure d'hiver). En heure d'été (UTC+2), les rappels partiront ~1h trop tôt. Pour la v1 c'est acceptable car la fenêtre est de 30 min ; à durcir avant l'été (utiliser `Temporal.ZonedDateTime` ou interroger Postgres avec `timezone('Europe/Paris', ...)`).
+Le fuseau est piloté par le secret `REMINDERS_TZ` (défaut : `Africa/Abidjan`). La conversion wall-time → UTC utilise `Intl.DateTimeFormat` avec une boucle de convergence sur 2 itérations, ce qui gère correctement les transitions DST. Pour la France :
+
+```bash
+supabase secrets set REMINDERS_TZ=Europe/Paris
+```
 
 ## Prérequis
 

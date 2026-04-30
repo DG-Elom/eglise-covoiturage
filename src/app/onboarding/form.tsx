@@ -60,7 +60,15 @@ export function OnboardingForm({
       return;
     }
     toast.success("Profil créé !");
-    router.push("/dashboard");
+    const alreadySeen =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("onboarding-seen")
+        : null;
+    if (alreadySeen === "1") {
+      router.push("/dashboard");
+    } else {
+      router.push("/onboarding/intro");
+    }
     router.refresh();
   }
 

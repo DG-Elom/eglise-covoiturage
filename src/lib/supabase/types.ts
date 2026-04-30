@@ -15,6 +15,7 @@ export type Database = {
           voiture_modele: string | null;
           voiture_couleur: string | null;
           voiture_plaque: string | null;
+          voiture_photo_url: string | null;
           charte_acceptee_at: string;
           is_admin: boolean;
           suspended: boolean;
@@ -36,6 +37,7 @@ export type Database = {
           voiture_modele?: string | null;
           voiture_couleur?: string | null;
           voiture_plaque?: string | null;
+          voiture_photo_url?: string | null;
           charte_acceptee_at: string;
           is_admin?: boolean;
           suspended?: boolean;
@@ -249,6 +251,28 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["reservations"]["Insert"]>;
         Relationships: [];
       };
+      track_positions: {
+        Row: {
+          trajet_instance_id: string;
+          conducteur_id: string;
+          lat: number;
+          lng: number;
+          updated_at: string;
+        };
+        Insert: {
+          trajet_instance_id: string;
+          conducteur_id: string;
+          lat: number;
+          lng: number;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          lat: number;
+          lng: number;
+          updated_at: string;
+        }>;
+        Relationships: [];
+      };
       demandes_passager: {
         Row: {
           id: string;
@@ -280,8 +304,128 @@ export type Database = {
         >;
         Relationships: [];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          passager_id: string;
+          trajet_id: string;
+          sens: "aller" | "retour";
+          pickup_adresse: string;
+          pickup_position: unknown;
+          actif: boolean;
+          created_at: string;
+        };
+        Insert: {
+          passager_id: string;
+          trajet_id: string;
+          sens: "aller" | "retour";
+          pickup_adresse: string;
+          pickup_position: string;
+          actif?: boolean;
+        };
+        Update: Partial<{
+          pickup_adresse: string;
+          pickup_position: string;
+          actif: boolean;
+        }>;
+        Relationships: [];
+      };
+      thanks: {
+        Row: {
+          id: string;
+          auteur_id: string;
+          destinataire_id: string;
+          reservation_id: string | null;
+          message: string;
+          is_public: boolean;
+          created_at: string;
+        };
+        Insert: {
+          auteur_id: string;
+          destinataire_id: string;
+          reservation_id?: string | null;
+          message: string;
+          is_public?: boolean;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+        };
+        Update: Partial<{
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+        }>;
+        Relationships: [];
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          reminder_2h: boolean;
+          imminent_departure: boolean;
+          new_request: boolean;
+          decision: boolean;
+          trajet_cancelled: boolean;
+          new_message: boolean;
+          thanks_received: boolean;
+          weekly_summary_admin: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          reminder_2h?: boolean;
+          imminent_departure?: boolean;
+          new_request?: boolean;
+          decision?: boolean;
+          trajet_cancelled?: boolean;
+          new_message?: boolean;
+          thanks_received?: boolean;
+          weekly_summary_admin?: boolean;
+        };
+        Update: Partial<{
+          reminder_2h: boolean;
+          imminent_departure: boolean;
+          new_request: boolean;
+          decision: boolean;
+          trajet_cancelled: boolean;
+          new_message: boolean;
+          thanks_received: boolean;
+          weekly_summary_admin: boolean;
+        }>;
+        Relationships: [];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      user_stats: {
+        Row: {
+          user_id: string;
+          total_trajets_conducteur: number;
+          total_passagers_transportes: number;
+          total_trajets_passager: number;
+          places_offertes_30j: number;
+          note_moyenne: number | null;
+          mois_courant_trajets: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       trajets_compatibles: {
         Args: {

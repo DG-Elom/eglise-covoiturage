@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Navigation, Volume2, Clock, Loader2 } from "lucide-react";
+import { Navigation, Volume2, Clock, Loader2, Share2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Map } from "@/components/map";
 import { geocodeAddress } from "@/lib/mapbox";
@@ -13,11 +14,15 @@ type Pos = LatLng & { ts: number };
 
 export function PassagerTracking({
   trajetInstanceId,
+  reservationId,
+  reservationStatut,
   pickupAdresse,
   emergencyName,
   emergencyPhone,
 }: {
   trajetInstanceId: string;
+  reservationId: string;
+  reservationStatut: string;
   pickupAdresse: string;
   emergencyName?: string | null;
   emergencyPhone?: string | null;
@@ -26,6 +31,7 @@ export function PassagerTracking({
   const [conducteurPos, setConducteurPos] = useState<Pos | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [waiting, setWaiting] = useState(true);
+  const [sharing, setSharing] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const alertedRef = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -96,6 +102,43 @@ export function PassagerTracking({
       navigator.vibrate([300, 150, 300, 150, 300]);
     }
   }, [isClose, eta, soundEnabled]);
+
+  async function shareTrajet() {
+    setSharing(true);
+    try {
+      const res = await fetch("/api/track/issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservationId }),
+      });
+      if (!res.ok) {
+        toast.error("Impossible de générer le lien de suivi.");
+        return;
+      }
+      const { url } = (await res.json()) as { url: string; expiresAt: string };
+
+      if (typeof navigator.share === "function") {
+        await navigator.share({ url, title: "Suivi de mon trajet covoiturage" }).catch(() => {
+          void copyToClipboard(url);
+        });
+      } else {
+        await copyToClipboard(url);
+      }
+    } catch {
+      toast.error("Erreur lors du partage.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyToClipboard(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien copié, valable 4h");
+    } catch {
+      toast.error("Impossible de copier le lien.");
+    }
+  }
 
   async function enableSound() {
     try {
@@ -185,6 +228,19 @@ export function PassagerTracking({
             Alerte sonore activée
           </span>
         )}
+        <button
+          type="button"
+          onClick={() => void shareTrajet()}
+          disabled={sharing || reservationStatut !== "accepted"}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
+        >
+          {sharing ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <Share2 className="size-3" />
+          )}
+          Partager mon trajet en live
+        </button>
         <SosButton emergencyName={emergencyName} emergencyPhone={emergencyPhone} />
       </div>
     </div>

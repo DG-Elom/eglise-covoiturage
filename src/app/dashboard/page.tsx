@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Car, Search, Plus, AlertCircle, Megaphone, Hand } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
+import { DashboardSoundListener } from "@/components/dashboard-sound-listener";
 import { OnlineToggle } from "@/components/online-toggle";
 import { ActionCard } from "./action-card";
 import { ConducteurSection, type ConducteurTrajet, type RatingInfo } from "./conducteur-section";
@@ -15,6 +16,7 @@ import {
   DemandesProchesSection,
   type DemandeProcheRow,
 } from "./demandes-proches-section";
+import { TopConducteurs } from "@/components/top-conducteurs";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -153,7 +155,7 @@ export default async function DashboardPage() {
             heure_depart,
             cultes (libelle, heure),
             conducteur:profiles!trajets_conducteur_id_fkey (
-              id, prenom, nom, telephone, voiture_modele, voiture_couleur, photo_url
+              id, prenom, nom, telephone, voiture_modele, voiture_couleur, voiture_photo_url, photo_url
             )
           )
         )
@@ -181,6 +183,7 @@ export default async function DashboardPage() {
         }}
         isAdmin={!!profile.is_admin}
       />
+      <DashboardSoundListener userId={user.id} />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-2">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -189,6 +192,10 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Bienvenue sur ton espace de covoiturage.
           </p>
+        </div>
+
+        <div className="mt-4">
+          <TopConducteurs />
         </div>
 
         {ratioBas && peutConduire && (

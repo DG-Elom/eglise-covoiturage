@@ -6,9 +6,14 @@ import { Loader2, MapPin, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { AvatarUpload } from "@/components/avatar-upload";
+import { VoiturePhotoUpload } from "@/components/voiture-photo-upload";
 import { confirmToast } from "@/lib/confirm";
 import { AddSavedPlaceModal, SavedPlacesManager, iconEmoji } from "@/components/saved-places-manager";
+import { NotificationSoundToggle } from "@/components/notification-sound-toggle";
+import { NotificationPreferences } from "@/components/notification-preferences";
+import { MesAbonnements } from "@/components/mes-abonnements";
 import { geocodeAddress } from "@/lib/mapbox";
+import { UserBadges } from "@/components/user-badges";
 import type { Database } from "@/lib/supabase/types";
 
 type SavedPlace = Database["public"]["Tables"]["saved_places"]["Row"];
@@ -24,7 +29,9 @@ type Profile = {
   voiture_modele: string | null;
   voiture_couleur: string | null;
   voiture_plaque: string | null;
+  voiture_photo_url: string | null;
   photo_url: string | null;
+  is_admin: boolean | null;
 };
 
 export function ProfilForm({ profile, email }: { profile: Profile; email: string }) {
@@ -33,6 +40,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
   const [deleting, setDeleting] = useState(false);
   const [role, setRole] = useState<Role>(profile.role);
   const [photoUrl, setPhotoUrl] = useState<string | null>(profile.photo_url);
+  const [voiturePhotoUrl, setVoiturePhotoUrl] = useState<string | null>(profile.voiture_photo_url);
   const isConducteur = role === "conducteur" || role === "les_deux";
 
   async function deleteAccount() {
@@ -72,6 +80,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         telephone: String(fd.get("telephone") || "").trim(),
         role,
         photo_url: photoUrl,
+        voiture_photo_url: isConducteur ? voiturePhotoUrl : null,
         voiture_modele: isConducteur
           ? String(fd.get("voiture_modele") || "").trim() || null
           : null,
@@ -143,7 +152,20 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         </div>
 
         {isConducteur && (
-          <div className="grid gap-3 pt-2 sm:grid-cols-3">
+          <div className="pt-2 space-y-3">
+            <div>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Photo de la voiture
+              </span>
+              <div className="mt-2">
+                <VoiturePhotoUpload
+                  userId={profile.id}
+                  value={voiturePhotoUrl}
+                  onChange={setVoiturePhotoUrl}
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
             <Field
               label="Modèle voiture"
               name="voiture_modele"
@@ -162,6 +184,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
               defaultValue={profile.voiture_plaque ?? ""}
               placeholder="AA-123-BB"
             />
+            </div>
           </div>
         )}
       </div>
@@ -176,6 +199,19 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
       </button>
 
       <SavedPlacesSection userId={profile.id} />
+
+      <MesAbonnements userId={profile.id} />
+
+      <NotificationSoundToggle />
+
+      <NotificationPreferences userId={profile.id} isAdmin={!!profile.is_admin} />
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-2 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Mes badges
+        </h2>
+        <UserBadges userId={profile.id} />
+      </div>
 
       <div className="rounded-xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
         <h2 className="text-sm font-semibold text-red-900 dark:text-red-200">

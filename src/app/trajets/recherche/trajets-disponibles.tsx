@@ -1,6 +1,7 @@
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
+import { SubscribeButton } from "@/components/subscribe-button";
 import type { ConducteurRating } from "./page";
 
 export type TrajetDisponible = {
@@ -37,12 +38,21 @@ function formatDate(iso: string): string {
   });
 }
 
+type SubscriptionMap = Record<
+  string,
+  { id: string; sens: "aller" | "retour" }[]
+>;
+
 export function TrajetsDisponibles({
   instances,
   conducteurRatings,
+  passagerId,
+  subscriptionsByTrajet = {},
 }: {
   instances: TrajetDisponible[];
   conducteurRatings?: Record<string, ConducteurRating>;
+  passagerId?: string;
+  subscriptionsByTrajet?: SubscriptionMap;
 }) {
   if (instances.length === 0) {
     return (
@@ -75,6 +85,13 @@ export function TrajetsDisponibles({
       <ul className="space-y-3">
         {instances.map((inst) => {
           const rating = conducteurRatings?.[inst.trajet.conducteur.id];
+          const trajetSens = inst.trajet.sens;
+          const sensList: ("aller" | "retour")[] =
+            trajetSens === "aller_retour"
+              ? ["aller", "retour"]
+              : [trajetSens as "aller" | "retour"];
+          const existingSubs = subscriptionsByTrajet[inst.trajet.id] ?? [];
+
           return (
             <li
               key={inst.id}
@@ -118,6 +135,26 @@ export function TrajetsDisponibles({
                       {SENS_LABEL[inst.trajet.sens]}
                     </span>
                   </div>
+                  {passagerId && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {sensList.map((s) => {
+                        const existing = existingSubs.find(
+                          (sub) => sub.sens === s,
+                        );
+                        return (
+                          <SubscribeButton
+                            key={s}
+                            trajetId={inst.trajet.id}
+                            sens={s}
+                            departAdresse={inst.trajet.depart_adresse}
+                            passagerId={passagerId}
+                            initialSubscribed={!!existing}
+                            initialSubscriptionId={existing?.id ?? null}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </li>

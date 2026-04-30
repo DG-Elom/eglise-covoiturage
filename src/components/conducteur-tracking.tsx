@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin, Square, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { shouldUpsert } from "@/lib/track-throttle";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+
+const TRACK_THROTTLE_MS = 10_000;
 
 export function ConducteurTracking({
   trajetInstanceId,
@@ -15,6 +18,7 @@ export function ConducteurTracking({
   const [starting, setStarting] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const lastUpsertTsRef = useRef<number | null>(null);
 
   function stop() {
     if (watchIdRef.current !== null) {
@@ -55,15 +59,34 @@ export function ConducteurTracking({
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
         channel.send({
           type: "broadcast",
           event: "pos",
-          payload: {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            ts: Date.now(),
-          },
+          payload: { lat, lng, accuracy: pos.coords.accuracy, ts: Date.now() },
+        });
+
+        const now = Date.now();
+        if (!shouldUpsert(lastUpsertTsRef.current, now, TRACK_THROTTLE_MS)) {
+          return;
+        }
+        lastUpsertTsRef.current = now;
+
+        void supabase.auth.getUser().then(({ data }) => {
+          const conducteurId = data.user?.id;
+          if (!conducteurId) return;
+          void supabase.from("track_positions").upsert(
+            {
+              trajet_instance_id: trajetInstanceId,
+              conducteur_id: conducteurId,
+              lat,
+              lng,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "trajet_instance_id" },
+          );
         });
       },
       (err) => {

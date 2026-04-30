@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle, Star } from "lucide-react";
+import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle, Star, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -13,6 +13,7 @@ import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
 import { RateTripModal } from "@/components/rate-trip-modal";
 import { PassagerRouteView } from "@/components/passager-route-view";
+import { SendThanksModal } from "@/components/send-thanks-modal";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
   pending: {
@@ -61,6 +62,7 @@ export type PassagerReservation = {
         telephone: string;
         voiture_modele: string | null;
         voiture_couleur: string | null;
+        voiture_photo_url: string | null;
         photo_url: string | null;
       } | null;
     } | null;
@@ -131,6 +133,7 @@ function ReservationCard({
   const [loading, setLoading] = useState(false);
   const [rated, setRated] = useState(initiallyRated);
   const [showRateModal, setShowRateModal] = useState(false);
+  const [showThanksModal, setShowThanksModal] = useState(false);
   const inst = reservation.trajets_instances;
   const trajet = inst?.trajets;
   const conducteur = trajet?.conducteur;
@@ -231,6 +234,9 @@ function ReservationCard({
                   {conducteur.voiture_couleur && ` · ${conducteur.voiture_couleur}`}
                 </span>
               )}
+              {conducteur.voiture_photo_url && (
+                <VoitureVignette url={conducteur.voiture_photo_url} />
+              )}
               <ReportButton
                 reservationId={reservation.id}
                 cibleId={conducteur.id}
@@ -244,6 +250,8 @@ function ReservationCard({
                   emergencyName={emergencyName}
                   emergencyPhone={emergencyPhone}
                   trajetInstanceId={inst.id}
+                  reservationId={reservation.id}
+                  reservationStatut={reservation.statut}
                   pickupAdresse={reservation.pickup_adresse}
                 />
               </div>
@@ -299,15 +307,25 @@ function ReservationCard({
           </div>
         )}
 
-        {reservation.statut === "completed" && !rated && conducteur && (
-          <div className="pt-1">
+        {reservation.statut === "completed" && conducteur && (
+          <div className="pt-1 flex flex-wrap gap-2">
+            {!rated && (
+              <button
+                type="button"
+                onClick={() => setShowRateModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+              >
+                <Star className="size-3" />
+                Noter ton trajet
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setShowRateModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+              onClick={() => setShowThanksModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800 hover:bg-emerald-100 transition dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
             >
-              <Star className="size-3" />
-              Noter ton trajet
+              <Heart className="size-3" />
+              Remercier
             </button>
           </div>
         )}
@@ -326,6 +344,59 @@ function ReservationCard({
           }}
         />
       )}
+
+      {showThanksModal && conducteur && (
+        <SendThanksModal
+          reservationId={reservation.id}
+          destinataire={{
+            id: conducteur.id,
+            prenom: conducteur.prenom,
+            nom: conducteur.nom,
+          }}
+          open={showThanksModal}
+          onClose={() => setShowThanksModal(false)}
+        />
+      )}
     </li>
+  );
+}
+
+function VoitureVignette({ url }: { url: string }) {
+  const [zoomed, setZoomed] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setZoomed(true)}
+        className="relative shrink-0 overflow-hidden rounded border border-emerald-300 dark:border-emerald-700 cursor-zoom-in"
+        style={{ width: 64, height: 48 }}
+        aria-label="Voir la photo de la voiture"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="Photo de la voiture" className="w-full h-full object-cover" />
+      </button>
+
+      {zoomed && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setZoomed(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt="Photo de la voiture (plein écran)"
+            className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain"
+          />
+          <button
+            type="button"
+            className="absolute top-4 right-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition"
+            onClick={() => setZoomed(false)}
+            aria-label="Fermer"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+      )}
+    </>
   );
 }

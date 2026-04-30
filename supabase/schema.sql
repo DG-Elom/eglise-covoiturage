@@ -329,9 +329,9 @@ $$ language plpgsql;
 
 -- ============ Seed initial ============
 insert into eglise (nom, adresse, position) values (
-  'Mon Église',
-  'À configurer',
-  st_makepoint(-4.0083, 5.36)::geography
+  'ICC Metz',
+  '7 rue de l''Abbé Grégoire, 57050 Metz',
+  st_makepoint(6.175955, 49.146943)::geography
 );
 
 insert into cultes (libelle, jour_semaine, heure) values

@@ -127,8 +127,10 @@ export default function ConfidentialitePage() {
             après la fin du trajet (à des fins de preuve en cas de litige).
           </li>
           <li>
-            <strong>Position GPS en temps réel</strong> : non stockée, diffusée
-            en direct uniquement et effacée à la fin du trajet.
+            <strong>Position GPS en temps réel</strong> : non stockée de manière
+            durable ; en cas d&apos;activation du lien de suivi public, la
+            dernière position est conservée temporairement (max 6h) puis
+            supprimée automatiquement.
           </li>
           <li>
             <strong>Compte supprimé</strong> : effacement immédiat des données
@@ -205,6 +207,19 @@ export default function ConfidentialitePage() {
             consentement explicite).
           </li>
         </ul>
+      </section>
+
+      <section className="mt-8 space-y-3">
+        <h2 className="text-xl font-semibold">7bis. Lien de suivi en direct</h2>
+        <p className="text-sm leading-relaxed">
+          Pendant un trajet, un passager peut générer un lien temporaire
+          (&quot;lien de suivi&quot;) permettant à un proche de voir la position
+          du conducteur en temps réel. Ce lien expire automatiquement au bout de
+          4 heures maximum. Aucune donnée n&apos;est transmise au destinataire du
+          lien au-delà de la position géographique du conducteur ; aucune
+          information n&apos;est stockée par le destinataire. Le partage est
+          strictement volontaire et initié par le passager.
+        </p>
       </section>
 
       <section className="mt-8 space-y-3">
