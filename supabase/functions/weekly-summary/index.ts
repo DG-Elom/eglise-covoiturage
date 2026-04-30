@@ -4,10 +4,9 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.91.1";
 import { renderWeeklySummaryEmail, sendResend } from "./_email.ts";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const FROM_EMAIL = Deno.env.get("WEEKLY_FROM_EMAIL") ?? "Covoiturage <noreply@covoiturage.local>";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -49,10 +48,38 @@ Stats de la semaine :
 - CO2 économisé estimé : ${stats.co2EconomiseKg} kg`;
 }
 
+async function callGemini(prompt: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json() as {
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+    }>;
+  };
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!text) throw new Error("Réponse Gemini vide");
+  return text.trim();
+}
+
 const run = async (): Promise<{ sent: number; errors: number }> => {
   if (!SUPABASE_URL || !SERVICE_ROLE) throw new Error("SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant");
   if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY manquant");
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY manquant");
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY manquant");
 
   const client = createClient(SUPABASE_URL, SERVICE_ROLE, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -100,17 +127,7 @@ const run = async (): Promise<{ sent: number; errors: number }> => {
     co2EconomiseKg,
   };
 
-  // Génère le message IA
-  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const aiMessage = await anthropic.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 300,
-    messages: [{ role: "user", content: buildPrompt(stats) }],
-  });
-
-  const content = aiMessage.content[0];
-  if (content.type !== "text") throw new Error("Réponse inattendue du modèle IA");
-  const messageCommunaute = content.text.trim();
+  const messageCommunaute = await callGemini(buildPrompt(stats));
 
   // Récupère tous les admins
   const { data: admins, error: adminsErr } = await client

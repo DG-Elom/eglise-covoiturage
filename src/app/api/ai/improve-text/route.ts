@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 import { validateImproveTextInput, buildImproveTextPrompt, type ImproveTextContext } from "./_logic";
 
@@ -59,22 +59,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const context = parsed.context as ImproveTextContext;
   const userPrompt = buildImproveTextPrompt(text, context);
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 400,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: `${SYSTEM_PROMPT}\n\n${userPrompt}`,
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
+    const improved = result.text?.trim();
+    if (!improved) {
       return NextResponse.json({ error: "Réponse inattendue du modèle" }, { status: 500 });
     }
 
-    return NextResponse.json({ improved: content.text.trim() });
+    return NextResponse.json({ improved });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erreur interne";
     return NextResponse.json({ error: msg }, { status: 500 });

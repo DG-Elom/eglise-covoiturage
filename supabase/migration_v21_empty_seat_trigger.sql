@@ -25,9 +25,29 @@ declare
   v_service_role  text;
   v_trajet_instance_id uuid;
   v_sens          text;
+  v_in_window     boolean;
 begin
-  -- Récupérer l'URL de la Edge Function et la clé service_role depuis les secrets Vault
-  -- (stockés via supabase secrets set ou directement dans les settings)
+  -- Garde-fou : si la transition n'est pas accepted -> cancelled, on sort.
+  if not (OLD.statut = 'accepted' and NEW.statut = 'cancelled') then
+    return NEW;
+  end if;
+
+  -- Vérifie que le départ est dans la fenêtre [now, now+12h] (Europe/Paris)
+  select exists (
+    select 1
+    from trajets_instances ti
+    join trajets t on t.id = ti.trajet_id
+    where ti.id = NEW.trajet_instance_id
+      and (ti.date::date + t.heure_depart::time) at time zone 'Europe/Paris'
+          < (now() at time zone 'Europe/Paris' + interval '12 hours')
+      and (ti.date::date + t.heure_depart::time) at time zone 'Europe/Paris'
+          > (now() at time zone 'Europe/Paris')
+  ) into v_in_window;
+
+  if not v_in_window then
+    return NEW;
+  end if;
+
   v_function_url := current_setting('app.supabase_url', true)
                     || '/functions/v1/empty-seat-alert';
   v_service_role := current_setting('app.service_role_key', true);
@@ -64,24 +84,7 @@ drop trigger if exists trg_empty_seat_alert on reservations;
 create trigger trg_empty_seat_alert
 after update of statut on reservations
 for each row
-when (
-  OLD.statut = 'accepted'
-  and NEW.statut = 'cancelled'
-  and exists (
-    select 1
-    from trajets_instances ti
-    join trajets t on t.id = ti.trajet_id
-    join cultes c on c.id = t.culte_id
-    where ti.id = NEW.trajet_instance_id
-      -- L'heure de départ (date + heure_depart) est dans moins de 12h
-      and (
-        ti.date::date + t.heure_depart::time
-      ) at time zone 'Europe/Paris' < now() at time zone 'Europe/Paris' + interval '12 hours'
-      and (
-        ti.date::date + t.heure_depart::time
-      ) at time zone 'Europe/Paris' > now() at time zone 'Europe/Paris'
-  )
-)
+when (OLD.statut = 'accepted' and NEW.statut = 'cancelled')
 execute function notify_empty_seat();
 
 -- ============================================================

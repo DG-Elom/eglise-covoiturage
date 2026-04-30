@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 import { parseGeoPoint, buildPickupPrompt, type PassagerInfo } from "./_logic";
 
@@ -11,6 +11,26 @@ interface PickupSuggestion {
   lat: number;
   lng: number;
 }
+
+const PICKUP_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    suggestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          label: { type: "string" },
+          raison: { type: "string" },
+          lat: { type: "number" },
+          lng: { type: "number" },
+        },
+        required: ["label", "raison", "lat", "lng"],
+      },
+    },
+  },
+  required: ["suggestions"],
+};
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const supabase = await createClient();
@@ -112,23 +132,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     egliseData.adresse,
   );
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 600,
-      messages: [{ role: "user", content: prompt }],
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: PICKUP_RESPONSE_SCHEMA,
+      },
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
+    const rawText = result.text?.trim();
+    if (!rawText) {
       return NextResponse.json({ error: "Réponse inattendue du modèle" }, { status: 500 });
     }
 
     let suggestions: PickupSuggestion[];
     try {
-      const parsed = JSON.parse(content.text.trim()) as { suggestions: PickupSuggestion[] };
+      const parsed = JSON.parse(rawText) as { suggestions: PickupSuggestion[] };
       suggestions = parsed.suggestions;
     } catch {
       return NextResponse.json({ error: "Réponse du modèle non parseable" }, { status: 500 });

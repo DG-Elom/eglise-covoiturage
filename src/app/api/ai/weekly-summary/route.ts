@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 import { computeWeeklyStats, type WeeklyRawData } from "./_stats";
 
@@ -69,8 +69,7 @@ export async function GET(): Promise<NextResponse> {
     .select("id", { count: "exact", head: true })
     .gte("envoye_le", since);
 
-  // Estimation km : on utilise les trajets effectués × distance moyenne estimée (20 km)
-  // Note : sans st_distance disponible côté API Next.js, on utilise une heuristique
+  // Estimation km : trajets effectués × distance moyenne estimée (20 km)
   const KM_MOYEN_PAR_TRAJET = 20;
   const kmCumules = (trajetsEffectues ?? 0) * KM_MOYEN_PAR_TRAJET;
 
@@ -85,21 +84,20 @@ export async function GET(): Promise<NextResponse> {
   const stats = computeWeeklyStats(raw);
   const prompt = buildSummaryPrompt(stats);
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 300,
-      messages: [{ role: "user", content: prompt }],
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
+    const message = result.text?.trim();
+    if (!message) {
       return NextResponse.json({ error: "Réponse inattendue du modèle" }, { status: 500 });
     }
 
-    return NextResponse.json({ stats, message: content.text.trim() });
+    return NextResponse.json({ stats, message });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erreur interne";
     return NextResponse.json({ error: msg }, { status: 500 });

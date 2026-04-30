@@ -15,11 +15,11 @@ create table if not exists notification_preferences (
   updated_at timestamptz not null default now()
 );
 
--- 2. Trigger updated_at (réutilise la fonction trigger_set_updated_at existante)
+-- 2. Trigger updated_at (réutilise la fonction set_updated_at existante)
 drop trigger if exists set_updated_at on notification_preferences;
 create trigger set_updated_at
   before update on notification_preferences
-  for each row execute function trigger_set_updated_at();
+  for each row execute function set_updated_at();
 
 -- 3. RLS
 alter table notification_preferences enable row level security;
