@@ -88,7 +88,7 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite-preview",
       contents: prompt,
     });
 
