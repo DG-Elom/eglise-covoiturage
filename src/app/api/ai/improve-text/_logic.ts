@@ -23,7 +23,7 @@ export function validateImproveTextInput(input: {
 }
 
 const CONTEXT_HINTS: Record<ImproveTextContext, string> = {
-  bio: "Il s'agit d'une bio de profil. Garde un ton chaleureux, personnel et sincère.",
+  bio: "Il s'agit d'une bio de profil. Écris à la première personne, ton chaleureux pour rassurer les passagers. Garde la bio courte (max 280 caractères), sincère et personnelle.",
   annulation: "Il s'agit d'un motif d'annulation. Sois poli, bref et empathique.",
   thanks: "Il s'agit d'un message de remerciement. Exprime gratitude et chaleur chrétienne.",
   message: "Il s'agit d'un message à envoyer à un autre membre. Garde un ton cordial et clair.",

@@ -13,7 +13,7 @@ export default async function ProfilPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, prenom, nom, telephone, role, voiture_modele, voiture_couleur, voiture_plaque, voiture_photo_url, photo_url, is_admin",
+      "id, prenom, nom, telephone, role, voiture_modele, voiture_couleur, voiture_plaque, voiture_photo_url, photo_url, bio, is_admin",
     )
     .eq("id", user.id)
     .maybeSingle();

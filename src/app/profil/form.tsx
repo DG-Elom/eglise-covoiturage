@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, MapPin, Plus, Save, Trash2 } from "lucide-react";
+import { Loader2, MapPin, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { AvatarUpload } from "@/components/avatar-upload";
@@ -31,6 +31,7 @@ type Profile = {
   voiture_plaque: string | null;
   voiture_photo_url: string | null;
   photo_url: string | null;
+  bio: string | null;
   is_admin: boolean | null;
 };
 
@@ -41,7 +42,30 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
   const [role, setRole] = useState<Role>(profile.role);
   const [photoUrl, setPhotoUrl] = useState<string | null>(profile.photo_url);
   const [voiturePhotoUrl, setVoiturePhotoUrl] = useState<string | null>(profile.voiture_photo_url);
+  const [bio, setBio] = useState(profile.bio ?? "");
+  const [improvingBio, setImprovingBio] = useState(false);
   const isConducteur = role === "conducteur" || role === "les_deux";
+
+  async function handleImproveBio() {
+    setImprovingBio(true);
+    try {
+      const res = await fetch("/api/ai/improve-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: bio, context: "bio" }),
+      });
+      const data = (await res.json()) as { improved?: string; error?: string };
+      if (!res.ok) {
+        toast.error(data.error ?? "Erreur lors de l'amélioration");
+        return;
+      }
+      if (data.improved) setBio(data.improved);
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setImprovingBio(false);
+    }
+  }
 
   async function deleteAccount() {
     const ok = await confirmToast(
@@ -80,6 +104,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         telephone: String(fd.get("telephone") || "").trim(),
         role,
         photo_url: photoUrl,
+        bio: bio.trim() || null,
         voiture_photo_url: isConducteur ? voiturePhotoUrl : null,
         voiture_modele: isConducteur
           ? String(fd.get("voiture_modele") || "").trim() || null
@@ -187,6 +212,40 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
             </div>
           </div>
         )}
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-700 dark:bg-slate-900">
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Bio <span className="text-slate-400 font-normal">(optionnel)</span>
+          </span>
+          <div className="mt-2 flex gap-2 items-start">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 280))}
+              placeholder="Quelques mots sur toi pour rassurer les passagers : ce que tu fais, ce que tu aimes, etc."
+              rows={3}
+              className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none resize-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500"
+            />
+            <button
+              type="button"
+              onClick={() => void handleImproveBio()}
+              disabled={improvingBio || bio.trim().length < 10}
+              title="Améliorer avec l'IA"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:border-emerald-400 hover:text-emerald-700 disabled:opacity-50 transition dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-emerald-500 dark:hover:text-emerald-400"
+            >
+              {improvingBio ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
+              Améliorer
+            </button>
+          </div>
+          <p className="mt-1 text-right text-xs text-slate-400">
+            {bio.length}/280
+          </p>
+        </label>
       </div>
 
       <button

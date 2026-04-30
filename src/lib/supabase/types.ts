@@ -16,6 +16,7 @@ export type Database = {
           voiture_couleur: string | null;
           voiture_plaque: string | null;
           voiture_photo_url: string | null;
+          bio: string | null;
           charte_acceptee_at: string;
           is_admin: boolean;
           suspended: boolean;
@@ -38,6 +39,7 @@ export type Database = {
           voiture_couleur?: string | null;
           voiture_plaque?: string | null;
           voiture_photo_url?: string | null;
+          bio?: string | null;
           charte_acceptee_at: string;
           is_admin?: boolean;
           suspended?: boolean;

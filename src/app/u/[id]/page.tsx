@@ -14,7 +14,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, prenom, nom, photo_url, role")
+    .select("id, prenom, nom, photo_url, role, bio")
     .eq("id", id)
     .maybeSingle();
 
@@ -67,6 +67,11 @@ export default async function PublicProfilePage({ params }: Props) {
             {profile.role && (
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {ROLE_LABEL[profile.role] ?? profile.role}
+              </p>
+            )}
+            {profile.bio && (
+              <p className="mt-2 max-w-xs text-sm text-slate-600 italic dark:text-slate-400">
+                {profile.bio}
               </p>
             )}
           </div>

@@ -44,6 +44,21 @@ describe("buildImproveTextPrompt", () => {
     expect(prompt.toLowerCase()).toContain("bio");
   });
 
+  it("le prompt bio mentionne la limite de 280 caractères", () => {
+    const prompt = buildImproveTextPrompt("test", "bio");
+    expect(prompt).toContain("280");
+  });
+
+  it("le prompt bio demande la première personne", () => {
+    const prompt = buildImproveTextPrompt("test", "bio");
+    expect(prompt.toLowerCase()).toMatch(/première personne|1ère personne/);
+  });
+
+  it("le prompt bio demande un ton chaleureux pour rassurer les passagers", () => {
+    const prompt = buildImproveTextPrompt("test", "bio");
+    expect(prompt.toLowerCase()).toMatch(/chaleur|passager/);
+  });
+
   it("adapte le prompt selon le contexte annulation", () => {
     const prompt = buildImproveTextPrompt("test", "annulation");
     expect(prompt.toLowerCase()).toContain("annulat");
