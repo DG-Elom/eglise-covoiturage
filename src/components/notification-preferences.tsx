@@ -5,9 +5,12 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { NotifKind, NotifPrefs } from "@/lib/notification-preferences";
 
+type AllPrefs = NotifPrefs;
+
 type KindConfig = {
-  kind: NotifKind;
+  kind: keyof AllPrefs;
   label: string;
+  description?: string;
   adminOnly?: boolean;
 };
 
@@ -20,9 +23,15 @@ const KINDS: KindConfig[] = [
   { kind: "new_message", label: "Nouveau message de chat" },
   { kind: "thanks_received", label: "Mot de remerciement reçu" },
   { kind: "weekly_summary_admin", label: "Résumé hebdomadaire (admin)", adminOnly: true },
+  {
+    kind: "engagement_relance",
+    label: "Relances pour t'aider à démarrer (3 max)",
+    description:
+      "On t'envoie 3 messages doux dans les 2 premières semaines pour t'aider à trouver ton premier trajet, puis on arrête.",
+  },
 ];
 
-const DEFAULT_PREFS: NotifPrefs = {
+const DEFAULT_PREFS: AllPrefs = {
   reminder_2h: true,
   imminent_departure: true,
   new_request: true,
@@ -31,6 +40,7 @@ const DEFAULT_PREFS: NotifPrefs = {
   new_message: true,
   thanks_received: true,
   weekly_summary_admin: true,
+  engagement_relance: true,
 };
 
 type Props = {
@@ -39,9 +49,9 @@ type Props = {
 };
 
 export function NotificationPreferences({ userId, isAdmin }: Props) {
-  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
+  const [prefs, setPrefs] = useState<AllPrefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<NotifKind | null>(null);
+  const [saving, setSaving] = useState<keyof AllPrefs | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,19 +71,22 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
             new_message: data.new_message,
             thanks_received: data.thanks_received,
             weekly_summary_admin: data.weekly_summary_admin,
+            engagement_relance: data.engagement_relance ?? true,
           });
         }
         setLoading(false);
       });
   }, [userId]);
 
-  async function toggle(kind: NotifKind) {
+  async function toggle(kind: keyof AllPrefs) {
     const next = !prefs[kind];
     setPrefs((prev) => ({ ...prev, [kind]: next }));
     setSaving(kind);
 
     const supabase = createClient();
-    const row = { user_id: userId, [kind]: next } as { user_id: string } & Record<NotifKind, boolean>;
+    const row = { user_id: userId, [kind]: next } as unknown as {
+      user_id: string;
+    } & Record<keyof AllPrefs, boolean>;
     const { error } = await supabase
       .from("notification_preferences")
       .upsert(row, { onConflict: "user_id" });
@@ -104,19 +117,26 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
         </div>
       ) : (
         <ul className="space-y-3">
-          {visibleKinds.map(({ kind, label }) => {
+          {visibleKinds.map(({ kind, label, description }) => {
             const enabled = prefs[kind];
             const isSaving = saving === kind;
             return (
-              <li key={kind} className="flex items-center justify-between gap-4">
-                <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+              <li key={kind} className="flex items-start justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+                  {description && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs">
+                      {description}
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={enabled}
                   disabled={isSaving}
                   onClick={() => void toggle(kind)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                  className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
                     enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
                   }`}
                 >

@@ -44,23 +44,14 @@ type SubRow = {
   auth: string;
 };
 
-type NotifPrefsRow = {
-  reminder_2h: boolean;
-  imminent_departure: boolean;
-  new_request: boolean;
-  decision: boolean;
-  trajet_cancelled: boolean;
-  new_message: boolean;
-  thanks_received: boolean;
-  weekly_summary_admin: boolean;
-};
+type NotifPrefsRow = NotifPrefs;
 
 async function fetchNotifPrefs(admin: ReturnType<typeof serviceClient>, userId: string): Promise<NotifPrefs | null> {
   if (!admin) return null;
   const { data, error } = await admin
     .from("notification_preferences")
     .select(
-      "reminder_2h, imminent_departure, new_request, decision, trajet_cancelled, new_message, thanks_received, weekly_summary_admin",
+      "reminder_2h, imminent_departure, new_request, decision, trajet_cancelled, new_message, thanks_received, weekly_summary_admin, engagement_relance",
     )
     .eq("user_id", userId)
     .maybeSingle();

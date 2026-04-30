@@ -32,6 +32,7 @@ describe("shouldSendPush", () => {
       new_message: true,
       thanks_received: true,
       weekly_summary_admin: true,
+      engagement_relance: true,
     };
     expect(shouldSendPush(prefs, "reminder_2h")).toBe(false);
   });
@@ -46,6 +47,7 @@ describe("shouldSendPush", () => {
       new_message: true,
       thanks_received: true,
       weekly_summary_admin: true,
+      engagement_relance: true,
     };
     expect(shouldSendPush(prefs, "reminder_2h")).toBe(true);
   });
@@ -60,6 +62,7 @@ describe("shouldSendPush", () => {
       new_message: true,
       thanks_received: true,
       weekly_summary_admin: true,
+      engagement_relance: true,
     };
     expect(shouldSendPush(prefs, "imminent_departure")).toBe(false);
   });
@@ -74,6 +77,7 @@ describe("shouldSendPush", () => {
       new_message: true,
       thanks_received: true,
       weekly_summary_admin: false,
+      engagement_relance: true,
     };
     expect(shouldSendPush(prefs, "weekly_summary_admin")).toBe(false);
   });
@@ -88,6 +92,7 @@ describe("shouldSendPush", () => {
       new_message: true,
       thanks_received: true,
       weekly_summary_admin: true,
+      engagement_relance: true,
     };
     const kinds: NotifKind[] = [
       "reminder_2h",

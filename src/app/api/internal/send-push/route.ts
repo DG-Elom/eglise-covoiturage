@@ -40,6 +40,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     "new_message",
     "thanks_received",
     "weekly_summary_admin",
+    "engagement",
   ];
   if (!validKinds.includes(kind)) {
     return NextResponse.json({ error: "invalid_kind" }, { status: 400 });

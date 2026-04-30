@@ -386,6 +386,7 @@ export type Database = {
           new_message: boolean;
           thanks_received: boolean;
           weekly_summary_admin: boolean;
+          engagement_relance: boolean;
           updated_at: string;
         };
         Insert: {
@@ -398,6 +399,7 @@ export type Database = {
           new_message?: boolean;
           thanks_received?: boolean;
           weekly_summary_admin?: boolean;
+          engagement_relance?: boolean;
         };
         Update: Partial<{
           reminder_2h: boolean;
@@ -408,6 +410,26 @@ export type Database = {
           new_message: boolean;
           thanks_received: boolean;
           weekly_summary_admin: boolean;
+          engagement_relance: boolean;
+        }>;
+        Relationships: [];
+      };
+      engagement_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          kind: "engage_d2" | "engage_d7" | "engage_d14";
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          kind: "engage_d2" | "engage_d7" | "engage_d14";
+          sent_at?: string;
+        };
+        Update: Partial<{
+          kind: "engage_d2" | "engage_d7" | "engage_d14";
+          sent_at: string;
         }>;
         Relationships: [];
       };
