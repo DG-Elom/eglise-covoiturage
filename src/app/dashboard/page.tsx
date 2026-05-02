@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Car, Search, Plus, AlertCircle, Megaphone, Hand } from "lucide-react";
+import { Car, Search, Plus, AlertCircle, Megaphone, Hand, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { DashboardSoundListener } from "@/components/dashboard-sound-listener";
@@ -40,6 +40,16 @@ export default async function DashboardPage() {
     .slice(0, 10);
   const peutConduire = profile.role === "conducteur" || profile.role === "les_deux";
   const peutVoyager = profile.role === "passager" || profile.role === "les_deux";
+
+  let nbTrajetsActifs = 0;
+  if (peutConduire) {
+    const { count } = await supabase
+      .from("trajets")
+      .select("id", { count: "exact", head: true })
+      .eq("conducteur_id", user.id)
+      .eq("actif", true);
+    nbTrajetsActifs = count ?? 0;
+  }
 
   let mesTrajets: ConducteurTrajet[] = [];
   if (peutConduire) {
@@ -215,6 +225,27 @@ export default async function DashboardPage() {
       />
       <DashboardSoundListener userId={user.id} />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
+        {peutConduire && nbTrajetsActifs === 0 && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/60 dark:bg-amber-950/30">
+            <Car className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-amber-900 dark:text-amber-100">
+                Tu n&apos;as pas encore proposé de trajet
+              </p>
+              <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/90">
+                Sans conducteurs, les passagers ne peuvent pas covoiturer.
+              </p>
+            </div>
+            <Link
+              href="/trajets/nouveau"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400"
+            >
+              <MapPin className="size-3.5" />
+              Créer mon premier trajet
+            </Link>
+          </div>
+        )}
+
         <div className="mb-2">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             Bonjour {profile.prenom} 👋

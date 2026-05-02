@@ -101,6 +101,79 @@ export const renderEngageD14 = (
   return { subject, html: baseLayout(prenom, body) };
 };
 
+// ──────────────────────────────────────────────
+// Templates conducteurs
+// ──────────────────────────────────────────────
+
+export interface StatsHebdoConducteur {
+  nbPassagersInscritsSansResa: number;
+  nbDemandesPending: number;
+}
+
+const APP_NOUVEAU_TRAJET_URL = "https://app.icc-covoit.fr/trajets/nouveau";
+const APP_PROFIL_URL = "https://app.icc-covoit.fr/profil";
+
+export const renderEngageConducteurD2 = (prenom: string): { subject: string; html: string } => {
+  const subject = `🚗 ${prenom}, tu peux aider la communauté ICC en proposant un trajet`;
+
+  const body = `
+  <p>
+    Tu es inscrit comme conducteur mais tu n'as pas encore proposé de trajet.
+    C'est super simple : indique ton point de départ, choisis le culte,
+    et les passagers proches de toi pourront te demander une place.
+  </p>
+  ${btn("Créer mon premier trajet", APP_NOUVEAU_TRAJET_URL)}`;
+
+  return { subject, html: baseLayout(prenom, body) };
+};
+
+export const renderEngageConducteurD7 = (
+  prenom: string,
+  stats: StatsHebdoConducteur,
+): { subject: string; html: string } => {
+  const subject = `🙏 ${prenom}, ${stats.nbPassagersInscritsSansResa} passagers attendent une place vers ICC`;
+
+  const body = `
+  <p>
+    <strong>${stats.nbPassagersInscritsSansResa} fidèles ICC</strong> se sont inscrits cette semaine
+    sans trouver de trajet.
+    ${stats.nbDemandesPending > 0 ? `Il y a en ce moment <strong>${stats.nbDemandesPending} demande${stats.nbDemandesPending > 1 ? "s" : ""} en attente</strong> de conducteur.` : ""}
+  </p>
+  <p>
+    Sans conducteurs, le covoiturage ne peut pas exister.
+    Sois leur premier conducteur !
+  </p>
+  ${btn("Créer mon premier trajet", APP_NOUVEAU_TRAJET_URL)}`;
+
+  return { subject, html: baseLayout(prenom, body) };
+};
+
+export const renderEngageConducteurD14 = (
+  prenom: string,
+  verset: Verset,
+): { subject: string; html: string } => {
+  const subject = `🚗 ${prenom}, on a vraiment besoin de toi`;
+
+  const body = `
+  <p>
+    La communauté ICC compte sur des conducteurs comme toi pour fonctionner.
+    Si tu peux conduire, un seul trajet peut changer le dimanche de plusieurs fidèles.
+  </p>
+  ${versetHtml(verset)}
+  <p style="margin-top:16px;">
+    Si tu ne peux pas conduire pour de bonnes raisons (voiture indisponible, contraintes personnelles),
+    tu peux changer ton rôle vers passager dans
+    <a href="${APP_PROFIL_URL}" style="color:#10b981;">ton profil</a>.
+    Sinon, on serait vraiment heureux que tu démarres !
+  </p>
+  <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="${APP_NOUVEAU_TRAJET_URL}" style="display:inline-block;padding:12px 28px;background:#10b981;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">Créer un trajet</a>
+    <a href="${APP_PROFIL_URL}" style="display:inline-block;padding:12px 28px;background:#f1f5f9;color:#1e293b;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">Modifier mon rôle</a>
+  </div>`;
+
+  return { subject, html: baseLayout(prenom, body) };
+};
+
 export interface ResendPayload {
   from: string;
   to: string[];

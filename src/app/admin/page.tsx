@@ -1,10 +1,14 @@
-import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck, Car } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { StatsSection } from "./stats-section";
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  const stats = await loadStats(supabase);
+  const [stats, nbInactifsConducteurs] = await Promise.all([
+    loadStats(supabase),
+    countInactiveConducteurs(supabase),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -12,9 +16,52 @@ export default async function AdminPage() {
         <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
         Vue d&apos;ensemble · Stats globales de la plateforme.
       </div>
+
+      {nbInactifsConducteurs > 0 && (
+        <Link
+          href="/api/admin/inactive-conducteurs"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm hover:bg-amber-100 dark:border-amber-800/60 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+        >
+          <Car className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span className="text-amber-900 dark:text-amber-100">
+            <strong>{nbInactifsConducteurs}</strong> conducteur
+            {nbInactifsConducteurs > 1 ? "s" : ""} inscrit
+            {nbInactifsConducteurs > 1 ? "s" : ""} sans trajet actif
+          </span>
+          <span className="ml-auto text-xs text-amber-700 dark:text-amber-300">
+            Voir la liste →
+          </span>
+        </Link>
+      )}
+
       <StatsSection stats={stats} />
     </div>
   );
+}
+
+async function countInactiveConducteurs(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<number> {
+  const { data: conducteursRaw } = await supabase
+    .from("profiles")
+    .select("id")
+    .in("role", ["conducteur", "les_deux"])
+    .eq("suspended", false)
+    .not("charte_acceptee_at", "is", null);
+
+  const ids = (conducteursRaw ?? []).map((p: { id: string }) => p.id);
+  if (ids.length === 0) return 0;
+
+  const { data: avecTrajet } = await supabase
+    .from("trajets")
+    .select("conducteur_id")
+    .eq("actif", true)
+    .in("conducteur_id", ids);
+
+  const idsAvecTrajet = new Set(
+    (avecTrajet ?? []).map((t: { conducteur_id: string }) => t.conducteur_id),
+  );
+  return ids.filter((id: string) => !idsAvecTrajet.has(id)).length;
 }
 
 type ReservationStatut =

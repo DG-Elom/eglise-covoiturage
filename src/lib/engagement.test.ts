@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chooseEngageKind } from "./engagement";
+import { chooseEngageKind, chooseConducteurEngageKind } from "./engagement";
 
 describe("chooseEngageKind", () => {
   it("retourne null pour 1 jour (trop tôt)", () => {
@@ -40,5 +40,47 @@ describe("chooseEngageKind", () => {
 
   it("retourne null pour 100 jours", () => {
     expect(chooseEngageKind(100)).toBeNull();
+  });
+});
+
+describe("chooseConducteurEngageKind", () => {
+  it("retourne null pour 1 jour (trop tôt)", () => {
+    expect(chooseConducteurEngageKind(1)).toBeNull();
+  });
+
+  it("retourne engage_conducteur_d2 pour 2 jours (borne basse)", () => {
+    expect(chooseConducteurEngageKind(2)).toBe("engage_conducteur_d2");
+  });
+
+  it("retourne engage_conducteur_d2 pour 6 jours", () => {
+    expect(chooseConducteurEngageKind(6)).toBe("engage_conducteur_d2");
+  });
+
+  it("retourne engage_conducteur_d7 pour 7 jours (borne basse)", () => {
+    expect(chooseConducteurEngageKind(7)).toBe("engage_conducteur_d7");
+  });
+
+  it("retourne engage_conducteur_d7 pour 13 jours", () => {
+    expect(chooseConducteurEngageKind(13)).toBe("engage_conducteur_d7");
+  });
+
+  it("retourne engage_conducteur_d14 pour 14 jours (borne basse)", () => {
+    expect(chooseConducteurEngageKind(14)).toBe("engage_conducteur_d14");
+  });
+
+  it("retourne engage_conducteur_d14 pour 27 jours", () => {
+    expect(chooseConducteurEngageKind(27)).toBe("engage_conducteur_d14");
+  });
+
+  it("retourne null pour 28 jours (délai dépassé)", () => {
+    expect(chooseConducteurEngageKind(28)).toBeNull();
+  });
+
+  it("retourne null pour 0 jour", () => {
+    expect(chooseConducteurEngageKind(0)).toBeNull();
+  });
+
+  it("retourne null pour 100 jours", () => {
+    expect(chooseConducteurEngageKind(100)).toBeNull();
   });
 });

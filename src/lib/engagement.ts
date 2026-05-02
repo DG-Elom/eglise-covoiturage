@@ -1,4 +1,8 @@
 export type EngageKind = "engage_d2" | "engage_d7" | "engage_d14";
+export type ConducteurEngageKind =
+  | "engage_conducteur_d2"
+  | "engage_conducteur_d7"
+  | "engage_conducteur_d14";
 
 /**
  * Retourne le kind de relance à envoyer selon l'âge du profil en jours
@@ -10,6 +14,17 @@ export type EngageKind = "engage_d2" | "engage_d7" | "engage_d14";
  *  14 ≤ age < 28 → engage_d14
  *  Hors plage    → null (pas de relance)
  */
+/**
+ * Retourne le kind de relance conducteur selon l'âge du profil en jours.
+ * Mêmes bornes que chooseEngageKind.
+ */
+export function chooseConducteurEngageKind(ageJours: number): ConducteurEngageKind | null {
+  if (ageJours >= 2 && ageJours < 7) return "engage_conducteur_d2";
+  if (ageJours >= 7 && ageJours < 14) return "engage_conducteur_d7";
+  if (ageJours >= 14 && ageJours < 28) return "engage_conducteur_d14";
+  return null;
+}
+
 export function chooseEngageKind(ageJours: number): EngageKind | null {
   if (ageJours >= 2 && ageJours < 7) return "engage_d2";
   if (ageJours >= 7 && ageJours < 14) return "engage_d7";
