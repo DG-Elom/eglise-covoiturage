@@ -17,6 +17,7 @@ import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import type { ConducteurRating } from "./page";
 import type { TrajetAlternative } from "@/lib/capacity";
 import { PlacesRestantesLive } from "@/components/places-restantes-live";
+import { formatDetour } from "@/lib/detour";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -332,6 +333,7 @@ export function RechercheForm({
               depart_adresse: alt.depart_adresse,
               heure_depart: alt.heure_depart,
               places_restantes: alt.places_restantes,
+              places_total: alt.places_restantes,
               detour_km: alt.detour_km,
               score: alt.score,
               dans_zone: alt.dans_zone,
@@ -575,7 +577,7 @@ function TrajetItem({
               initialPlacesRestantes={trajet.places_restantes}
             />
             <span className={outOfZone ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}>
-              Détour : {trajet.detour_km} km
+              {formatDetour(trajet.detour_km)}
             </span>
           </div>
         </div>
@@ -659,7 +661,7 @@ function InstanceFullDialog({
                       <Users className="size-3" /> {alt.places_restantes} place
                       {alt.places_restantes > 1 ? "s" : ""}
                     </span>
-                    <span className="text-slate-500">Détour : {alt.detour_km} km</span>
+                    <span className="text-slate-500">🛣️ {formatDetour(alt.detour_km)} de détour</span>
                   </div>
                 </div>
                 <button

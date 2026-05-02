@@ -6,6 +6,7 @@ import type {
   TopConducteur,
   TopConducteursResponse,
 } from "@/app/api/top-conducteurs/route";
+import { formatDetour } from "@/lib/detour";
 
 const MEDALS = ["🥇", "🥈", "🥉"] as const;
 
@@ -38,7 +39,7 @@ function getHighlight(
   if (isTopDetour) {
     return {
       icon: "🛣️",
-      label: `${conducteur.kmDetourConsenti.toFixed(1)} km de détour`,
+      label: formatDetour(conducteur.kmDetourConsenti) + " de détour",
     };
   }
   if (isTopTrajets) {
