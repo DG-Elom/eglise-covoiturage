@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -64,6 +64,7 @@ export function RechercheForm({
   const [fullDialog, setFullDialog] = useState<{
     alternatives: TrajetAlternative[];
   } | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = culte ? nextOccurrences(culte.jour_semaine, 4) : [];
@@ -114,6 +115,10 @@ export function RechercheForm({
         places_total: t.places_total ?? t.places_restantes,
       }));
     setResults(trajets);
+    // Defile vers les resultats apres render
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   async function reserver(t: TrajetCompatible) {
@@ -321,13 +326,15 @@ export function RechercheForm({
       </form>
 
       {results !== null && (
-        <Resultats
-          results={results}
-          adresse={adresse}
-          onReserve={reserver}
-          reserving={reserving}
-          conducteurRatings={conducteurRatings}
-        />
+        <div ref={resultsRef} className="scroll-mt-4">
+          <Resultats
+            results={results}
+            adresse={adresse}
+            onReserve={reserver}
+            reserving={reserving}
+            conducteurRatings={conducteurRatings}
+          />
+        </div>
       )}
 
       {results !== null && results.length === 0 && adresse && culteId && date && (
