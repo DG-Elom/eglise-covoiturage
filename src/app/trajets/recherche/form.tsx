@@ -80,6 +80,15 @@ export function RechercheForm({
       toast.error("Renseigne tous les champs");
       return;
     }
+    // Garde-fou anti-null-island : refuse si l'adresse n'a pas de coordonnees valides
+    if (
+      !Number.isFinite(adresse.lat) ||
+      !Number.isFinite(adresse.lng) ||
+      (Math.abs(adresse.lat) < 0.01 && Math.abs(adresse.lng) < 0.01)
+    ) {
+      toast.error("Ton adresse n'a pas pu être localisée. Ressaisis-la.");
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase.rpc("trajets_compatibles", {
       p_passager_lat: adresse.lat,
@@ -93,10 +102,17 @@ export function RechercheForm({
       toast.error(error.message);
       return;
     }
-    const trajets = ((data ?? []) as TrajetCompatible[]).map((t) => ({
-      ...t,
-      places_total: t.places_total ?? t.places_restantes,
-    }));
+    // Filtre les detours aberrants (> 100 km = bug geocoding cote conducteur)
+    const MAX_DETOUR_KM = 100;
+    const trajets = ((data ?? []) as TrajetCompatible[])
+      .filter((t) => {
+        const detour = Number(t.detour_km);
+        return !Number.isFinite(detour) || detour <= MAX_DETOUR_KM;
+      })
+      .map((t) => ({
+        ...t,
+        places_total: t.places_total ?? t.places_restantes,
+      }));
     setResults(trajets);
   }
 
