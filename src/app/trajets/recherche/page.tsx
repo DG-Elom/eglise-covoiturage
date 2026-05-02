@@ -32,6 +32,7 @@ export default async function RecherchePage() {
     .from("trajets_instances")
     .select(
       `id, date,
+       reservations (statut),
        trajet:trajets!inner (
          id, depart_adresse, sens, places_total, heure_depart,
          conducteur:profiles!trajets_conducteur_id_fkey (id, prenom, nom, photo_url),
@@ -42,7 +43,18 @@ export default async function RecherchePage() {
     .gte("date", today)
     .order("date");
 
-  const instances = (instancesRaw ?? []) as unknown as TrajetDisponible[];
+  const instances = ((instancesRaw ?? []) as unknown as (TrajetDisponible & {
+    reservations: { statut: string }[];
+  })[]).map((inst) => {
+    const occupees = inst.reservations.filter((r) =>
+      r.statut === "accepted" || r.statut === "pending",
+    ).length;
+    const placesTotal = inst.trajet.places_total;
+    return {
+      ...inst,
+      places_restantes: Math.max(0, placesTotal - occupees),
+    };
+  }) as (TrajetDisponible & { places_restantes: number })[];
 
   const { data: pastReservations } = await supabase
     .from("reservations")

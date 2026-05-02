@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MapPin, Users, Search, History } from "lucide-react";
+import { Loader2, MapPin, Users, Search, History, X } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { SavedPlacesButton } from "@/components/saved-places-button";
 import { Avatar } from "@/components/avatar";
@@ -15,6 +15,7 @@ import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
 import { notify } from "@/lib/notify";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import type { ConducteurRating } from "./page";
+import type { TrajetAlternative } from "@/lib/capacity";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -57,6 +58,9 @@ export function RechercheForm({
   const [sens, setSens] = useState<Sens>("aller");
   const [date, setDate] = useState<string>("");
   const [results, setResults] = useState<TrajetCompatible[] | null>(null);
+  const [fullDialog, setFullDialog] = useState<{
+    alternatives: TrajetAlternative[];
+  } | null>(null);
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = culte ? nextOccurrences(culte.jour_semaine, 4) : [];
@@ -87,20 +91,45 @@ export function RechercheForm({
   async function reserver(t: TrajetCompatible) {
     if (!adresse) return;
     setReserving(t.trajet_instance_id);
-    const { data, error } = await supabase
-      .from("reservations")
-      .insert({
-        passager_id: passagerId,
+
+    const res = await fetch("/api/reservations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         trajet_instance_id: t.trajet_instance_id,
         sens,
         pickup_adresse: adresse.address,
-        pickup_position: `POINT(${adresse.lng} ${adresse.lat})`,
-      })
-      .select("id")
-      .single();
+        pickup_lat: adresse.lat,
+        pickup_lng: adresse.lng,
+        passager_lat: adresse.lat,
+        passager_lng: adresse.lng,
+        culte_id: culteId,
+        date,
+      }),
+    });
+
     setReserving(null);
-    if (error || !data) {
-      toast.error(error?.message ?? "Erreur");
+
+    if (res.status === 409) {
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        alternatives?: TrajetAlternative[];
+      };
+      if (body.error === "instance_full") {
+        setFullDialog({ alternatives: body.alternatives ?? [] });
+        return;
+      }
+    }
+
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(body.error ?? "Erreur");
+      return;
+    }
+
+    const data = (await res.json()) as { id?: string };
+    if (!data.id) {
+      toast.error("Erreur inattendue");
       return;
     }
     void notify("reservation_created", data.id);
@@ -279,6 +308,29 @@ export function RechercheForm({
           culteId={culteId}
           date={date}
           sens={sens}
+        />
+      )}
+
+      {fullDialog !== null && (
+        <InstanceFullDialog
+          alternatives={fullDialog.alternatives}
+          onClose={() => setFullDialog(null)}
+          onReserveAlternative={(alt) => {
+            setFullDialog(null);
+            void reserver({
+              trajet_id: alt.trajet_id,
+              trajet_instance_id: alt.trajet_instance_id,
+              conducteur_id: alt.conducteur_id,
+              conducteur_prenom: alt.conducteur_prenom,
+              conducteur_photo_url: alt.conducteur_photo_url,
+              depart_adresse: alt.depart_adresse,
+              heure_depart: alt.heure_depart,
+              places_restantes: alt.places_restantes,
+              detour_km: alt.detour_km,
+              score: alt.score,
+              dans_zone: alt.dans_zone,
+            });
+          }}
         />
       )}
     </div>
@@ -534,6 +586,101 @@ function TrajetItem({
         </button>
       </div>
     </li>
+  );
+}
+
+function InstanceFullDialog({
+  alternatives,
+  onClose,
+  onReserveAlternative,
+}: {
+  alternatives: TrajetAlternative[];
+  onClose: () => void;
+  onReserveAlternative: (alt: TrajetAlternative) => void;
+}) {
+  const router = useRouter();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 shadow-xl">
+        <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4">
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-slate-100">
+              Ce trajet est complet
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Toutes les places ont été prises. Voici des alternatives.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-4 shrink-0 rounded-md p-1 text-slate-400 hover:text-slate-600 transition dark:text-slate-500 dark:hover:text-slate-300"
+            aria-label="Fermer"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3 max-h-96 overflow-y-auto">
+          {alternatives.length === 0 ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Aucune alternative disponible pour ce créneau.
+            </p>
+          ) : (
+            alternatives.map((alt) => (
+              <div
+                key={alt.trajet_instance_id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      photoUrl={alt.conducteur_photo_url}
+                      prenom={alt.conducteur_prenom}
+                      nom=""
+                      size="sm"
+                    />
+                    <span className="font-medium text-sm">{alt.conducteur_prenom}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <MapPin className="size-3 shrink-0" />
+                    <span className="truncate">{alt.depart_adresse}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                      <Users className="size-3" /> {alt.places_restantes} place
+                      {alt.places_restantes > 1 ? "s" : ""}
+                    </span>
+                    <span className="text-slate-500">Détour : {alt.detour_km} km</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onReserveAlternative(alt)}
+                  className="shrink-0 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 transition dark:hover:bg-emerald-500"
+                >
+                  Demander
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-3">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              router.push("/trajets/recherche");
+            }}
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+          >
+            Voir tous les trajets disponibles
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

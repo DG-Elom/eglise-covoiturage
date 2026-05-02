@@ -6,6 +6,7 @@ import type { ConducteurRating } from "./page";
 export type TrajetDisponible = {
   id: string;
   date: string;
+  places_restantes?: number;
   trajet: {
     id: string;
     depart_adresse: string;
@@ -85,11 +86,17 @@ export function TrajetsDisponibles({
       <ul className="space-y-3">
         {instances.map((inst) => {
           const rating = conducteurRatings?.[inst.trajet.conducteur.id];
+          const isComplet =
+            inst.places_restantes !== undefined && inst.places_restantes <= 0;
 
           return (
             <li
               key={inst.id}
-              className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+              className={`rounded-xl border bg-white p-4 dark:bg-slate-900 ${
+                isComplet
+                  ? "border-red-200 dark:border-red-800 opacity-75"
+                  : "border-slate-200 dark:border-slate-700"
+              }`}
             >
               <div className="flex items-start gap-3">
                 <Avatar
@@ -109,6 +116,11 @@ export function TrajetsDisponibles({
                     <span className="text-xs text-slate-500">
                       {inst.trajet.culte.libelle}
                     </span>
+                    {isComplet && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                        Complet
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
                     <Calendar className="size-3 shrink-0" />
@@ -122,8 +134,15 @@ export function TrajetsDisponibles({
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs">
                     <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
-                      <Users className="size-3" /> {inst.trajet.places_total} place
-                      {inst.trajet.places_total > 1 ? "s" : ""}
+                      <Users className="size-3" />
+                      {isComplet ? (
+                        <span className="text-red-600 dark:text-red-400">0 place</span>
+                      ) : (
+                        <>
+                          {inst.places_restantes ?? inst.trajet.places_total} place
+                          {(inst.places_restantes ?? inst.trajet.places_total) > 1 ? "s" : ""}
+                        </>
+                      )}
                     </span>
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
                       {SENS_LABEL[inst.trajet.sens]}

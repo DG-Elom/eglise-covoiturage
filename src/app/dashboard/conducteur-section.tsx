@@ -400,6 +400,25 @@ function ReservationRow({
 
   async function update(statut: "accepted" | "refused", action: "accept" | "refuse") {
     setLoading(action);
+
+    if (statut === "accepted") {
+      // Route dédiée : update + push aux passagers auto-refusés si trajet devient plein
+      const res = await fetch(`/api/reservations/${reservation.id}/accept`, {
+        method: "POST",
+      });
+      setLoading(null);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        toast.error(body.error ?? "Erreur");
+        return;
+      }
+      void notify("reservation_accepted", reservation.id);
+      toast.success("Demande acceptée");
+      router.refresh();
+      return;
+    }
+
+    // Refus : update direct Supabase
     const supabase = createClient();
     const { error } = await supabase
       .from("reservations")
@@ -410,11 +429,8 @@ function ReservationRow({
       toast.error(error.message);
       return;
     }
-    void notify(
-      statut === "accepted" ? "reservation_accepted" : "reservation_refused",
-      reservation.id,
-    );
-    toast.success(statut === "accepted" ? "Demande acceptée" : "Demande refusée");
+    void notify("reservation_refused", reservation.id);
+    toast.success("Demande refusée");
     router.refresh();
   }
 
