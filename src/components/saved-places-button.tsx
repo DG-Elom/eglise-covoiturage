@@ -13,7 +13,10 @@ import {
 
 const MAX_PLACES = 8;
 
-type SavedPlace = Database["public"]["Tables"]["saved_places"]["Row"];
+type SavedPlace = Database["public"]["Tables"]["saved_places"]["Row"] & {
+  lat?: number | null;
+  lng?: number | null;
+};
 
 type Props = {
   userId: string;
@@ -32,11 +35,11 @@ export function SavedPlacesButton({ userId, value, onChange }: Props) {
     let cancelled = false;
     supabase
       .from("saved_places")
-      .select("*")
+      .select("id, user_id, label, icon, adresse, position, created_at, lat, lng")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .then(({ data }) => {
-        if (!cancelled) setPlaces(data ?? []);
+        if (!cancelled) setPlaces((data ?? []) as unknown as SavedPlace[]);
       });
     return () => {
       cancelled = true;
@@ -50,14 +53,29 @@ export function SavedPlacesButton({ userId, value, onChange }: Props) {
 
   const canAdd = value !== null && !isAlreadySaved && places.length < MAX_PLACES;
 
-  function selectPlace(place: SavedPlace) {
-    const result: GeocodeResult = {
-      id: place.id,
-      address: place.adresse,
-      lat: 0,
-      lng: 0,
-    };
-    onChange(result);
+  async function selectPlace(place: SavedPlace) {
+    let lat = Number(place.lat);
+    let lng = Number(place.lng);
+    // Fallback : si la migration v31 n'est pas encore appliquée ou que les
+    // colonnes générées sont nulles, on re-géocode à la volée pour ne pas
+    // retourner [0,0] (qui causait des "5472 km de détour").
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01)
+    ) {
+      try {
+        const { geocodeAddress } = await import("@/lib/mapbox");
+        const results = await geocodeAddress(place.adresse);
+        if (results.length > 0) {
+          lat = results[0].lat;
+          lng = results[0].lng;
+        }
+      } catch {
+        // ignore : si même le re-geocode échoue, on bloquera côté onSearch
+      }
+    }
+    onChange({ id: place.id, address: place.adresse, lat, lng });
   }
 
   if (places.length === 0 && !value) return null;

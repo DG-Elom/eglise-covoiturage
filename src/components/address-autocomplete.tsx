@@ -38,6 +38,15 @@ export function AddressAutocomplete({ value, onChange, placeholder }: Props) {
     };
   }, [query, value?.address]);
 
+  // Sync query <- value.address quand le parent fixe l'adresse (raccourci, recents)
+  useEffect(() => {
+    if (value?.address && value.address !== query) {
+      setQuery(value.address);
+      setOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value?.address]);
+
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
