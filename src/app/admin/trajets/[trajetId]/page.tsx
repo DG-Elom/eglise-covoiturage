@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, Users, Calendar, CheckCircle2, BarChart3, Clock, Route } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/avatar";
-import { computeAcceptanceRate } from "@/lib/trajet-stats";
+import { computeAcceptanceRate, parseDetourRpcResult } from "@/lib/trajet-stats";
+import { formatDetourLong } from "@/lib/detour";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
@@ -216,6 +217,11 @@ export default async function TrajetDetailPage({
     };
   });
 
+  // Détour moyen via PostGIS (st_distance trajet_ligne / pickup_position)
+  const { data: detourData } = await supabase
+    .rpc("trajet_detour_moyen_km", { p_trajet_id: trajetId });
+  const detourMoyenKm = parseDetourRpcResult(detourData);
+
   const conducteur = trajetRaw.conducteur as unknown as ProfileRow | null;
   const culte = trajetRaw.culte as unknown as { id: string; libelle: string; jour_semaine: number; heure: string } | null;
 
@@ -350,7 +356,7 @@ export default async function TrajetDetailPage({
             </div>
             <div>
               <div className="text-lg font-bold text-slate-900 dark:text-slate-50">
-                —
+                {detourMoyenKm !== null ? formatDetourLong(detourMoyenKm) : "—"}
               </div>
               <div className="text-xs text-slate-400 dark:text-slate-500">
                 Détour moyen consenti

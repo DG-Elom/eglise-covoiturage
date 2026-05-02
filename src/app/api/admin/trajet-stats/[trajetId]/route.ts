@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { computeAcceptanceRate } from "@/lib/trajet-stats";
+import { computeAcceptanceRate, parseDetourRpcResult } from "@/lib/trajet-stats";
 
 export const runtime = "nodejs";
 
@@ -260,10 +260,10 @@ export async function GET(
     });
   }
 
-  // Détour moyen — calculé en JS à partir des données disponibles
-  // (st_distance nécessiterait une requête SQL raw non disponible via client JS)
-  // On retourne null ici ; la valeur réelle nécessite PostGIS direct
-  const detourMoyenKm: number | null = null;
+  // Détour moyen via PostGIS (st_distance trajet_ligne / pickup_position)
+  const { data: detourData } = await supabase
+    .rpc("trajet_detour_moyen_km", { p_trajet_id: trajetId });
+  const detourMoyenKm = parseDetourRpcResult(detourData);
 
   const response: TrajetStatsResponse = {
     trajet: {

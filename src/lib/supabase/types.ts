@@ -486,6 +486,10 @@ export type Database = {
           dans_zone: boolean;
         }[];
       };
+      trajet_detour_moyen_km: {
+        Args: { p_trajet_id: string };
+        Returns: number | null;
+      };
     };
   };
 };
