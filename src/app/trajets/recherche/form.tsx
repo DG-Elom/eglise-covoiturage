@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -67,6 +67,11 @@ export function RechercheForm({
 
   const culte = cultes.find((c) => c.id === culteId);
   const dates = culte ? nextOccurrences(culte.jour_semaine, 4) : [];
+
+  // Reset les resultats des qu'un critere de recherche change (oblige a relancer Rechercher)
+  useEffect(() => {
+    setResults(null);
+  }, [adresse, culteId, sens, date]);
   const todayStr = useMemo(() => toDateString(new Date()), []);
 
   async function onSearch(e: React.FormEvent) {
