@@ -447,8 +447,11 @@ function Resultats({
   reserving: string | null;
   conducteurRatings?: Record<string, ConducteurRating>;
 }) {
-  const dansZone = results.filter((r) => r.dans_zone);
-  const horsZone = results.filter((r) => !r.dans_zone).slice(0, 3);
+  // Exclut les trajets sans place restante (sinon bouton "Demander" inutile + frustrant)
+  const avecPlace = results.filter((r) => (r.places_restantes ?? 0) > 0);
+  const dansZone = avecPlace.filter((r) => r.dans_zone);
+  const horsZone = avecPlace.filter((r) => !r.dans_zone).slice(0, 3);
+  const completsCount = results.length - avecPlace.length;
 
   if (results.length === 0) {
     return (
@@ -458,6 +461,19 @@ function Resultats({
         </p>
         <p className="mt-1 text-xs text-slate-500">
           Essaie une autre date, ou un autre programme.
+        </p>
+      </div>
+    );
+  }
+
+  if (avecPlace.length === 0) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-800 dark:bg-amber-950/30">
+        <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+          Tous les trajets de cette date sont complets
+        </p>
+        <p className="mt-1 text-xs text-amber-800 dark:text-amber-300/90">
+          {results.length} trajet{results.length > 1 ? "s ont été proposés" : " a été proposé"}, mais plus aucune place n&apos;est disponible. Essaie une autre date ou propose toi-même un trajet.
         </p>
       </div>
     );
@@ -523,6 +539,13 @@ function Resultats({
             ))}
           </ul>
         </>
+      )}
+
+      {completsCount > 0 && (
+        <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+          {completsCount} trajet{completsCount > 1 ? "s" : ""} complet
+          {completsCount > 1 ? "s" : ""} non affiché{completsCount > 1 ? "s" : ""}.
+        </p>
       )}
     </div>
   );
