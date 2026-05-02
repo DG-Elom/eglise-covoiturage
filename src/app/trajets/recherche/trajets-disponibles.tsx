@@ -1,7 +1,6 @@
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, Info, MapPin, Users } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
-import { SubscribeButton } from "@/components/subscribe-button";
 import type { ConducteurRating } from "./page";
 
 export type TrajetDisponible = {
@@ -38,21 +37,12 @@ function formatDate(iso: string): string {
   });
 }
 
-type SubscriptionMap = Record<
-  string,
-  { id: string; sens: "aller" | "retour" }[]
->;
-
 export function TrajetsDisponibles({
   instances,
   conducteurRatings,
-  passagerId,
-  subscriptionsByTrajet = {},
 }: {
   instances: TrajetDisponible[];
   conducteurRatings?: Record<string, ConducteurRating>;
-  passagerId?: string;
-  subscriptionsByTrajet?: SubscriptionMap;
 }) {
   if (instances.length === 0) {
     return (
@@ -82,15 +72,19 @@ export function TrajetsDisponibles({
           {instances.length} trajet{instances.length > 1 ? "s" : ""}
         </span>
       </div>
+
+      <div className="mb-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300">
+        <Info className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          Pour réserver une place, saisis ton adresse en haut et lance la
+          recherche. L&apos;inscription automatique est disponible après une première
+          réservation acceptée.
+        </span>
+      </div>
+
       <ul className="space-y-3">
         {instances.map((inst) => {
           const rating = conducteurRatings?.[inst.trajet.conducteur.id];
-          const trajetSens = inst.trajet.sens;
-          const sensList: ("aller" | "retour")[] =
-            trajetSens === "aller_retour"
-              ? ["aller", "retour"]
-              : [trajetSens as "aller" | "retour"];
-          const existingSubs = subscriptionsByTrajet[inst.trajet.id] ?? [];
 
           return (
             <li
@@ -135,35 +129,12 @@ export function TrajetsDisponibles({
                       {SENS_LABEL[inst.trajet.sens]}
                     </span>
                   </div>
-                  {passagerId && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {sensList.map((s) => {
-                        const existing = existingSubs.find(
-                          (sub) => sub.sens === s,
-                        );
-                        return (
-                          <SubscribeButton
-                            key={s}
-                            trajetId={inst.trajet.id}
-                            sens={s}
-                            departAdresse={inst.trajet.depart_adresse}
-                            passagerId={passagerId}
-                            initialSubscribed={!!existing}
-                            initialSubscriptionId={existing?.id ?? null}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
             </li>
           );
         })}
       </ul>
-      <p className="mt-3 text-xs text-slate-500">
-        Pour réserver une place, saisis ton adresse en haut puis lance la recherche.
-      </p>
     </section>
   );
 }

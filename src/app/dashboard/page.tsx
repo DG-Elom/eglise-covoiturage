@@ -150,6 +150,7 @@ export default async function DashboardPage() {
         trajets_instances!inner (
           id,
           date,
+          trajet_id,
           trajets (
             depart_adresse,
             heure_depart,
@@ -164,13 +165,42 @@ export default async function DashboardPage() {
       .eq("passager_id", user.id)
       .gte("trajets_instances.date", today)
       .order("demande_le", { ascending: false });
-    mesReservations = (data ?? []) as unknown as PassagerReservation[];
+    const rawReservations = (data ?? []) as unknown as PassagerReservation[];
 
     const { data: ratings } = await supabase
       .from("trip_ratings")
       .select("reservation_id")
       .eq("rater_id", user.id);
     alreadyRatedIds = (ratings ?? []).map((r) => r.reservation_id);
+
+    // Fetch subscriptions actives pour enrichir chaque réservation eligible
+    const eligibleTrajetIds = rawReservations
+      .filter((r) => r.statut === "accepted" || r.statut === "completed")
+      .map((r) => r.trajets_instances?.trajet_id)
+      .filter((id): id is string => Boolean(id));
+
+    const subsByTrajetSens: Map<string, string> = new Map();
+    if (eligibleTrajetIds.length > 0) {
+      const { data: subsData } = await supabase
+        .from("subscriptions")
+        .select("id, trajet_id, sens")
+        .eq("passager_id", user.id)
+        .eq("actif", true)
+        .in("trajet_id", eligibleTrajetIds);
+
+      for (const sub of subsData ?? []) {
+        subsByTrajetSens.set(`${sub.trajet_id}:${sub.sens}`, sub.id);
+      }
+    }
+
+    mesReservations = rawReservations.map((r) => {
+      const trajetId = r.trajets_instances?.trajet_id;
+      if (!trajetId || (r.statut !== "accepted" && r.statut !== "completed")) {
+        return r;
+      }
+      const subId = subsByTrajetSens.get(`${trajetId}:${r.sens}`);
+      return { ...r, subscription: subId ? { id: subId } : null };
+    });
   }
 
   return (

@@ -14,6 +14,7 @@ import { ReportButton } from "@/components/report-button";
 import { RateTripModal } from "@/components/rate-trip-modal";
 import { PassagerRouteView } from "@/components/passager-route-view";
 import { SendThanksModal } from "@/components/send-thanks-modal";
+import { SubscribeButton } from "@/components/subscribe-button";
 
 const STATUT_LABEL: Record<string, { label: string; tone: string }> = {
   pending: {
@@ -51,6 +52,7 @@ export type PassagerReservation = {
   trajets_instances: {
     id: string;
     date: string;
+    trajet_id: string;
     trajets: {
       depart_adresse: string;
       heure_depart: string;
@@ -67,6 +69,7 @@ export type PassagerReservation = {
       } | null;
     } | null;
   } | null;
+  subscription?: { id: string } | null;
 };
 
 export function PassagerSection({
@@ -329,6 +332,20 @@ function ReservationCard({
             </button>
           </div>
         )}
+
+        {(reservation.statut === "accepted" || reservation.statut === "completed") &&
+          inst?.trajet_id && (
+            <div className="pt-1">
+              <SubscribeButton
+                trajetId={inst.trajet_id}
+                sens={reservation.sens}
+                fromReservationId={reservation.id}
+                pickupAdresse={reservation.pickup_adresse}
+                initialSubscribed={!!reservation.subscription}
+                initialSubscriptionId={reservation.subscription?.id ?? null}
+              />
+            </div>
+          )}
       </div>
 
       {showRateModal && conducteur && (

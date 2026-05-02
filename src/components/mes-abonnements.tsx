@@ -84,7 +84,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
     return (
       <section className="mt-6">
         <h2 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-          Mes abonnements
+          Inscriptions automatiques aux trajets récurrents
         </h2>
         <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
           <p className="text-sm text-slate-500">Chargement…</p>
@@ -98,7 +98,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
           <RefreshCw className="size-3.5" />
-          Mes abonnements
+          Inscriptions automatiques aux trajets récurrents
         </h2>
         {abonnements.length > 0 && (
           <span className="text-xs text-slate-500">

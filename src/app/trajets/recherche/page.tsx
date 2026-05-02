@@ -59,23 +59,6 @@ export default async function RecherchePage() {
     .from("trip_ratings")
     .select("rated_id, stars");
 
-  // Abonnements actifs du passager, indexés par trajet_id
-  const { data: subsData } = await supabase
-    .from("subscriptions")
-    .select("id, trajet_id, sens")
-    .eq("passager_id", profile.id)
-    .eq("actif", true);
-
-  const subscriptionsByTrajet: Record<
-    string,
-    { id: string; sens: "aller" | "retour" }[]
-  > = {};
-  for (const sub of subsData ?? []) {
-    const list = subscriptionsByTrajet[sub.trajet_id] ?? [];
-    list.push({ id: sub.id, sens: sub.sens as "aller" | "retour" });
-    subscriptionsByTrajet[sub.trajet_id] = list;
-  }
-
   const conducteurRatings: Record<string, ConducteurRating> = {};
   if (ratingsData && ratingsData.length > 0) {
     const grouped: Record<string, number[]> = {};
@@ -117,8 +100,6 @@ export default async function RecherchePage() {
         <TrajetsDisponibles
           instances={instances}
           conducteurRatings={conducteurRatings}
-          passagerId={profile.id}
-          subscriptionsByTrajet={subscriptionsByTrajet}
         />
       </main>
     </>
