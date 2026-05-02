@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
+import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { RechercheForm } from "./form";
-import { TrajetsDisponibles, type TrajetDisponible } from "./trajets-disponibles";
 import { deduplicateRecentAddresses } from "./recent-addresses";
 
 export type ConducteurRating = { avg: number | null; count: number };
@@ -28,33 +28,12 @@ export default async function RecherchePage() {
     .order("jour_semaine");
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: instancesRaw } = await supabase
-    .from("trajets_instances")
-    .select(
-      `id, date,
-       reservations (statut),
-       trajet:trajets!inner (
-         id, depart_adresse, sens, places_total, heure_depart,
-         conducteur:profiles!trajets_conducteur_id_fkey (id, prenom, nom, photo_url),
-         culte:cultes!inner (libelle, heure)
-       )`,
-    )
-    .eq("annule_par_conducteur", false)
-    .gte("date", today)
-    .order("date");
 
-  const instances = ((instancesRaw ?? []) as unknown as (TrajetDisponible & {
-    reservations: { statut: string }[];
-  })[]).map((inst) => {
-    const occupees = inst.reservations.filter((r) =>
-      r.statut === "accepted" || r.statut === "pending",
-    ).length;
-    const placesTotal = inst.trajet.places_total;
-    return {
-      ...inst,
-      places_restantes: Math.max(0, placesTotal - occupees),
-    };
-  }) as (TrajetDisponible & { places_restantes: number })[];
+  const { count: trajetsDisponiblesCount } = await supabase
+    .from("trajets_instances")
+    .select("id", { count: "exact", head: true })
+    .eq("annule_par_conducteur", false)
+    .gte("date", today);
 
   const { data: pastReservations } = await supabase
     .from("reservations")
@@ -99,19 +78,25 @@ export default async function RecherchePage() {
         isAdmin={!!profile.is_admin}
       />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8">
-        <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
-          Saisis ton adresse et le culte concerné, ou parcours simplement les trajets
-          déjà proposés ci-dessous.
-        </p>
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/20">
+          <Search className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-400" />
+          <div className="text-sm">
+            <p className="font-medium text-emerald-900 dark:text-emerald-100">
+              {trajetsDisponiblesCount ?? 0} trajet
+              {(trajetsDisponiblesCount ?? 0) > 1 ? "s" : ""} proposé
+              {(trajetsDisponiblesCount ?? 0) > 1 ? "s" : ""} à venir
+            </p>
+            <p className="mt-0.5 text-emerald-800/80 dark:text-emerald-200/80">
+              Saisis ton adresse et le culte concerné pour voir uniquement les
+              conducteurs qui passent près de chez toi.
+            </p>
+          </div>
+        </div>
         <RechercheForm
           passagerId={profile.id}
           cultes={cultes ?? []}
           conducteurRatings={conducteurRatings}
           recentAddresses={recentAddresses}
-        />
-        <TrajetsDisponibles
-          instances={instances}
-          conducteurRatings={conducteurRatings}
         />
       </main>
     </>

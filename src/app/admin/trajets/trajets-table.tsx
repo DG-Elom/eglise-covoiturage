@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Car, Calendar, Search, Ban, CheckCircle2, Trash2 } from "lucide-react";
+import { Car, Calendar, Search, Ban, CheckCircle2, Trash2, BarChart3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
@@ -263,6 +264,13 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        <Link
+                          href={`/admin/trajets/${t.id}`}
+                          title="Statistiques détaillées"
+                          className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition dark:text-slate-500 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                        >
+                          <BarChart3 className="size-4" />
+                        </Link>
                         <button
                           type="button"
                           onClick={() => toggleActif(t)}

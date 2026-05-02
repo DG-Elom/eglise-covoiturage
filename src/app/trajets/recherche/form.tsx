@@ -16,6 +16,7 @@ import { notify } from "@/lib/notify";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import type { ConducteurRating } from "./page";
 import type { TrajetAlternative } from "@/lib/capacity";
+import { PlacesRestantesLive } from "@/components/places-restantes-live";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -32,6 +33,7 @@ type TrajetCompatible = {
   depart_adresse: string;
   heure_depart: string;
   places_restantes: number;
+  places_total: number;
   detour_km: number;
   score: number;
   dans_zone: boolean;
@@ -85,7 +87,11 @@ export function RechercheForm({
       toast.error(error.message);
       return;
     }
-    setResults((data ?? []) as TrajetCompatible[]);
+    const trajets = ((data ?? []) as TrajetCompatible[]).map((t) => ({
+      ...t,
+      places_total: t.places_total ?? t.places_restantes,
+    }));
+    setResults(trajets);
   }
 
   async function reserver(t: TrajetCompatible) {
@@ -563,10 +569,11 @@ function TrajetItem({
             Départ à <strong>{trajet.heure_depart.slice(0, 5)}</strong>
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-xs">
-            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
-              <Users className="size-3" /> {trajet.places_restantes} place
-              {trajet.places_restantes > 1 ? "s" : ""}
-            </span>
+            <PlacesRestantesLive
+              trajetInstanceId={trajet.trajet_instance_id}
+              placesTotal={trajet.places_total}
+              initialPlacesRestantes={trajet.places_restantes}
+            />
             <span className={outOfZone ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}>
               Détour : {trajet.detour_km} km
             </span>

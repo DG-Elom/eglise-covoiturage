@@ -11,5 +11,6 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "supabase/functions/**/*.test.ts"],
     globals: true,
+    setupFiles: ["./src/test-setup.ts"],
   },
 });
