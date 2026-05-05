@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Car, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/avatar";
+import { SendSmsButton } from "./send-sms-button";
 
 type Conducteur = {
   id: string;
@@ -78,7 +79,7 @@ export default async function InactiveConducteursPage() {
           {inactifs.map((p) => (
             <li
               key={p.id}
-              className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              className="relative flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >
               <Avatar
                 photoUrl={p.photo_url}
@@ -103,6 +104,12 @@ export default async function InactiveConducteursPage() {
                     <Phone className="size-3.5" />
                     Appeler
                   </a>
+                )}
+                {p.telephone && (
+                  <SendSmsButton
+                    userId={p.id}
+                    userName={`${p.prenom} ${p.nom}`}
+                  />
                 )}
                 <Link
                   href={`/admin/profiles?q=${encodeURIComponent(`${p.prenom} ${p.nom}`)}`}

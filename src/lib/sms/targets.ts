@@ -6,7 +6,8 @@ export type TargetFilter =
   | { type: "drivers_inactive" }
   | { type: "passengers_inactive" }
   | { type: "all_members" }
-  | { type: "by_culte"; culte_id: string };
+  | { type: "by_culte"; culte_id: string }
+  | { type: "single"; user_id: string };
 
 export type Recipient = {
   id: string;
@@ -20,6 +21,7 @@ export const TARGET_LABELS: Record<TargetFilter["type"], string> = {
   passengers_inactive: "Passagers inactifs (>30 jours sans reservation)",
   all_members: "Tous les membres inscrits",
   by_culte: "Membres ayant reserve sur ce culte",
+  single: "Destinataire individuel",
 };
 
 function svc() {
@@ -93,6 +95,12 @@ export async function resolveRecipients(
         (recent ?? []).map((r: { passager_id: string }) => r.passager_id),
       );
       ids = profiles.filter((p) => !recentSet.has(p.id)).map((p) => p.id);
+      break;
+    }
+
+    case "single": {
+      const p = phoneMap.get(filter.user_id);
+      ids = p ? [p.id] : [];
       break;
     }
 

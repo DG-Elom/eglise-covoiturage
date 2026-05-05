@@ -212,7 +212,7 @@ function ReservationCard({
               />
               <Check className="size-4" />
               <span className="text-sm font-medium">
-                {conducteur.prenom} {conducteur.nom} t&apos;emmène
+                Trajet avec {conducteur.prenom} {conducteur.nom}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
