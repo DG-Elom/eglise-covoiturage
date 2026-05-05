@@ -79,7 +79,7 @@ export default async function InactiveConducteursPage() {
           {inactifs.map((p) => (
             <li
               key={p.id}
-              className="relative flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >
               <Avatar
                 photoUrl={p.photo_url}

@@ -85,8 +85,11 @@ export function SendSmsButton({
     }
   }
 
-  if (!open) {
-    return (
+  const charCount = message.length;
+  const overLimit = charCount > 160;
+
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -95,74 +98,80 @@ export function SendSmsButton({
         <MessageSquare className="size-3.5" />
         SMS
       </button>
-    );
-  }
 
-  const charCount = message.length;
-  const overLimit = charCount > 160;
-
-  return (
-    <div className="absolute right-4 top-full z-10 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-          SMS pour {userName}
-        </span>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
         >
-          <X className="size-4" />
-        </button>
-      </div>
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                SMS pour {userName}
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Fermer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
 
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Tape ton message ou clique Suggerer"
-        rows={3}
-        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-      />
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tape ton message ou clique Suggerer"
+              rows={4}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              autoFocus
+            />
 
-      <div className="mt-1 flex items-center justify-between text-[10px]">
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading !== null}
-          className="inline-flex items-center gap-1 text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
-        >
-          {loading === "generate" ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <Sparkles className="size-3" />
-          )}
-          Suggerer (IA)
-        </button>
-        <span className={overLimit ? "text-red-600" : "text-slate-400"}>
-          {charCount}/160
-        </span>
-      </div>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={loading !== null}
+                className="inline-flex items-center gap-1.5 text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
+              >
+                {loading === "generate" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
+                Suggerer (IA)
+              </button>
+              <span className={overLimit ? "text-red-600" : "text-slate-400"}>
+                {charCount}/160
+              </span>
+            </div>
 
-      <div className="mt-2 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-        >
-          Annuler
-        </button>
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={loading !== null || message.trim().length === 0}
-          className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-amber-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
-        >
-          {loading === "send" ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : null}
-          Envoyer
-        </button>
-      </div>
-    </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={loading !== null || message.trim().length === 0}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {loading === "send" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : null}
+                Envoyer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
