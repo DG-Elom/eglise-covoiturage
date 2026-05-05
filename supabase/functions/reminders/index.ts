@@ -86,6 +86,26 @@ const sendInternalPush = async (
   }
 };
 
+const sendInternalSms = async (
+  userId: string,
+  body: string,
+  dedupKey: string,
+): Promise<void> => {
+  if (!INTERNAL_PUSH_SECRET) return;
+  try {
+    await fetch(`${APP_URL}/api/internal/send-sms`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-secret": INTERNAL_PUSH_SECRET,
+      },
+      body: JSON.stringify({ userId, kind: "reminder_2h", body, dedupKey }),
+    });
+  } catch (e) {
+    console.warn("[reminders] sms interne échoué", e);
+  }
+};
+
 // Fuseau horaire de l'église, configurable. Défaut: Africa/Abidjan (GMT+0, sans DST).
 // Pour la France: REMINDERS_TZ=Europe/Paris (gère DST automatiquement).
 const REMINDERS_TZ = Deno.env.get("REMINDERS_TZ") ?? "Africa/Abidjan";
@@ -295,6 +315,12 @@ const processInstance = async (
           `${nPassagers} passager${nPassagers > 1 ? "s" : ""} vers ${programme} à ${heureDepart}`,
           "/dashboard",
         );
+        await sendInternalSms(
+          conducteurTyped.id,
+          `Rappel : trajet ${programme} dans ~2h (départ ${heureDepart}). ` +
+            `${nPassagers} passager${nPassagers > 1 ? "s" : ""}. ${APP_URL}/dashboard`,
+          `reminder_2h:${instance.id}:${conducteurTyped.id}`,
+        );
         summary.sent++;
       }
     }
@@ -345,6 +371,12 @@ const processInstance = async (
         "🚗 Trajet dans 2h",
         `RDV avec ${conducteurTyped.prenom} à ${heureDepart}`,
         "/dashboard",
+      );
+      await sendInternalSms(
+        passager.id,
+        `Rappel : trajet ${programme} dans ~2h. RDV avec ${conducteurTyped.prenom} ` +
+          `à ${heureDepart}. Détails : ${APP_URL}/dashboard`,
+        `reminder_2h:${instance.id}:${passager.id}`,
       );
       summary.sent++;
     } catch (e) {

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import type { NotifKind, NotifPrefs } from "@/lib/notification-preferences";
+import type { NotifPrefs } from "@/lib/notification-preferences";
 
-type AllPrefs = NotifPrefs;
+type AllPrefs = NotifPrefs & { sms_enabled: boolean };
 
 type KindConfig = {
   kind: keyof AllPrefs;
@@ -41,6 +41,7 @@ const DEFAULT_PREFS: AllPrefs = {
   thanks_received: true,
   weekly_summary_admin: true,
   engagement_relance: true,
+  sms_enabled: true,
 };
 
 type Props = {
@@ -72,6 +73,7 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
             thanks_received: data.thanks_received,
             weekly_summary_admin: data.weekly_summary_admin,
             engagement_relance: data.engagement_relance ?? true,
+            sms_enabled: data.sms_enabled ?? true,
           });
         }
         setLoading(false);
@@ -103,54 +105,95 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
 
   const visibleKinds = KINDS.filter((k) => !k.adminOnly || isAdmin);
 
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-700 dark:bg-slate-900">
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Notifications push
-      </h2>
+  const smsEnabled = prefs.sms_enabled;
+  const smsSaving = saving === "sms_enabled";
 
-      {loading ? (
-        <div className="space-y-3">
-          {visibleKinds.map((k) => (
-            <div key={k.kind} className="h-6 rounded bg-slate-100 animate-pulse dark:bg-slate-800" />
-          ))}
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {visibleKinds.map(({ kind, label, description }) => {
-            const enabled = prefs[kind];
-            const isSaving = saving === kind;
-            return (
-              <li key={kind} className="flex items-start justify-between gap-4">
-                <div className="flex flex-col">
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
-                  {description && (
-                    <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs">
-                      {description}
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enabled}
-                  disabled={isSaving}
-                  onClick={() => void toggle(kind)}
-                  className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                    enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                      enabled ? "translate-x-5" : "translate-x-0.5"
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Notifications push
+        </h2>
+
+        {loading ? (
+          <div className="space-y-3">
+            {visibleKinds.map((k) => (
+              <div key={k.kind} className="h-6 rounded bg-slate-100 animate-pulse dark:bg-slate-800" />
+            ))}
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {visibleKinds.map(({ kind, label, description }) => {
+              const enabled = prefs[kind];
+              const isSaving = saving === kind;
+              return (
+                <li key={kind} className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+                    {description && (
+                      <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs">
+                        {description}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    disabled={isSaving}
+                    onClick={() => void toggle(kind)}
+                    className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                      enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
                     }`}
-                  />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        enabled ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Notifications SMS
+        </h2>
+        {loading ? (
+          <div className="h-6 rounded bg-slate-100 animate-pulse dark:bg-slate-800" />
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                Recevoir des SMS pour les events critiques
+              </span>
+              <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-xs">
+                Demande acceptée + rappel 2h avant le trajet. Un canal de secours quand le push ne passe pas (iPhone notamment).
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={smsEnabled}
+              disabled={smsSaving}
+              onClick={() => void toggle("sms_enabled")}
+              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                smsEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  smsEnabled ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

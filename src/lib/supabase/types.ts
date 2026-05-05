@@ -389,6 +389,7 @@ export type Database = {
           thanks_received: boolean;
           weekly_summary_admin: boolean;
           engagement_relance: boolean;
+          sms_enabled: boolean;
           updated_at: string;
         };
         Insert: {
@@ -402,6 +403,7 @@ export type Database = {
           thanks_received?: boolean;
           weekly_summary_admin?: boolean;
           engagement_relance?: boolean;
+          sms_enabled?: boolean;
         };
         Update: Partial<{
           reminder_2h: boolean;
@@ -413,6 +415,45 @@ export type Database = {
           thanks_received: boolean;
           weekly_summary_admin: boolean;
           engagement_relance: boolean;
+          sms_enabled: boolean;
+        }>;
+        Relationships: [];
+      };
+      sms_log: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          kind: string;
+          phone: string;
+          dedup_key: string;
+          provider: string;
+          provider_message_id: string | null;
+          status: string;
+          error: string | null;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          kind: string;
+          phone: string;
+          dedup_key: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          status?: string;
+          error?: string | null;
+          sent_at?: string;
+        };
+        Update: Partial<{
+          user_id: string | null;
+          kind: string;
+          phone: string;
+          dedup_key: string;
+          provider: string;
+          provider_message_id: string | null;
+          status: string;
+          error: string | null;
+          sent_at: string;
         }>;
         Relationships: [];
       };

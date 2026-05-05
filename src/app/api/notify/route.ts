@@ -8,6 +8,7 @@ import {
   emailTrajetAnnuleParConducteur,
 } from "@/lib/email/templates";
 import { sendPushTo } from "@/lib/push";
+import { sendSmsTo } from "@/lib/sms/send";
 
 type NotifyKind =
   | "reservation_created"
@@ -198,6 +199,21 @@ export async function POST(req: NextRequest) {
   }).catch((err) => {
     console.warn("[notify] push failed", err);
   });
+
+  // SMS — uniquement pour les events critiques (MVP : demande acceptée).
+  if (body.kind === "reservation_accepted") {
+    const smsBody =
+      `${data.conducteurPrenom} a accepté ta demande pour ${data.programmeLibelle} ` +
+      `le ${data.date} à ${data.heure}. Détails : ${appUrl}/dashboard`;
+    void sendSmsTo({
+      userId: recipientId,
+      kind: "decision",
+      body: smsBody,
+      dedupKey: `decision:${body.reservationId}`,
+    }).catch((err) => {
+      console.warn("[notify] sms failed", err);
+    });
+  }
 
   return NextResponse.json(result);
 }

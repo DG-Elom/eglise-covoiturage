@@ -145,8 +145,11 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
           label="Téléphone"
           name="telephone"
           type="tel"
+          placeholder="06 12 34 56 78"
           defaultValue={profile.telephone}
           required
+          pattern="^(\+33|0033|0)[1-9](\s?\d{2}){4}$"
+          title="Numéro français à 10 chiffres (ex : 06 12 34 56 78)"
         />
       </div>
 
@@ -469,6 +472,8 @@ function Field({
   placeholder,
   defaultValue,
   disabled,
+  pattern,
+  title,
 }: {
   label: string;
   name: string;
@@ -477,6 +482,8 @@ function Field({
   placeholder?: string;
   defaultValue?: string;
   disabled?: boolean;
+  pattern?: string;
+  title?: string;
 }) {
   return (
     <label className="block">
@@ -488,6 +495,8 @@ function Field({
         placeholder={placeholder}
         defaultValue={defaultValue}
         disabled={disabled}
+        pattern={pattern}
+        title={title}
         className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-500 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
       />
     </label>
