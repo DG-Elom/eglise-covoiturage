@@ -19,7 +19,7 @@ export default async function AdminPage() {
 
       {nbInactifsConducteurs > 0 && (
         <Link
-          href="/api/admin/inactive-conducteurs"
+          href="/admin/inactive-conducteurs"
           className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm hover:bg-amber-100 dark:border-amber-800/60 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
         >
           <Car className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
