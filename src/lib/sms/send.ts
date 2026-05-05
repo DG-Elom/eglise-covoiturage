@@ -2,7 +2,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
-export type SmsKind = "reminder_2h" | "decision";
+export type SmsKind = "reminder_2h" | "decision" | "admin_broadcast";
 
 export type SmsResult =
   | { ok: true; messageId?: string }

@@ -10,6 +10,7 @@ import {
   Users,
   AlertOctagon,
   Building2,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
@@ -23,6 +24,7 @@ const NAV_ITEMS: Array<{ href: string; label: string; icon: typeof BarChart3 }> 
   { href: "/admin/cultes", label: "Cultes", icon: ShieldCheck },
   { href: "/admin/signalements", label: "Signalements", icon: AlertOctagon },
   { href: "/admin/eglise", label: "Église", icon: Building2 },
+  { href: "/admin/broadcast-sms", label: "SMS groupe", icon: Sparkles },
   { href: "/admin/heatmap", label: "Heatmap", icon: Flame },
 ];
 
