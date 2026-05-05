@@ -90,7 +90,7 @@ export async function resolveRecipients(
       const { data: recent } = await admin
         .from("reservations")
         .select("passager_id")
-        .gte("created_at", cutoff);
+        .gte("demande_le", cutoff);
       const recentSet = new Set(
         (recent ?? []).map((r: { passager_id: string }) => r.passager_id),
       );
@@ -107,21 +107,37 @@ export async function resolveRecipients(
     case "by_culte": {
       const { data: trajets } = await admin
         .from("trajets")
-        .select("id")
+        .select("id, conducteur_id")
         .eq("culte_id", filter.culte_id);
-      const trajetIds = (trajets ?? []).map((t: { id: string }) => t.id);
-      if (trajetIds.length === 0) break;
-      const { data: reservs } = await admin
-        .from("reservations")
-        .select("passager_id, conducteur_id, trajet_id")
-        .in("trajet_id", trajetIds);
+      const trajetRows = (trajets ?? []) as Array<{
+        id: string;
+        conducteur_id: string;
+      }>;
+      if (trajetRows.length === 0) break;
+
+      const trajetIds = trajetRows.map((t) => t.id);
       const seen = new Set<string>();
-      for (const r of (reservs ?? []) as Array<{
-        passager_id: string;
-        conducteur_id: string | null;
-      }>) {
-        seen.add(r.passager_id);
-        if (r.conducteur_id) seen.add(r.conducteur_id);
+      for (const t of trajetRows) seen.add(t.conducteur_id);
+
+      const { data: instances } = await admin
+        .from("trajets_instances")
+        .select("id")
+        .in("trajet_id", trajetIds);
+      const instanceIds = (instances ?? []).map((i: { id: string }) => i.id);
+
+      if (instanceIds.length > 0) {
+        const { data: reservs } = await admin
+          .from("reservations")
+          .select("passager_id, statut")
+          .in("trajet_instance_id", instanceIds);
+        for (const r of (reservs ?? []) as Array<{
+          passager_id: string;
+          statut: string;
+        }>) {
+          if (r.statut === "accepted" || r.statut === "completed") {
+            seen.add(r.passager_id);
+          }
+        }
       }
       ids = Array.from(seen);
       break;

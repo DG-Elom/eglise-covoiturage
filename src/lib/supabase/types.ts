@@ -457,6 +457,45 @@ export type Database = {
         }>;
         Relationships: [];
       };
+      sms_campaigns: {
+        Row: {
+          id: string;
+          auteur_id: string;
+          target_filter: string;
+          target_label: string | null;
+          prompt_admin: string | null;
+          ton: string | null;
+          message: string;
+          n_destinataires: number;
+          n_envoyes: number;
+          n_skipped: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          auteur_id: string;
+          target_filter: string;
+          target_label?: string | null;
+          prompt_admin?: string | null;
+          ton?: string | null;
+          message: string;
+          n_destinataires?: number;
+          n_envoyes?: number;
+          n_skipped?: number;
+          created_at?: string;
+        };
+        Update: Partial<{
+          target_filter: string;
+          target_label: string | null;
+          prompt_admin: string | null;
+          ton: string | null;
+          message: string;
+          n_destinataires: number;
+          n_envoyes: number;
+          n_skipped: number;
+        }>;
+        Relationships: [];
+      };
       engagement_log: {
         Row: {
           id: string;
