@@ -17,6 +17,8 @@ import {
   Star,
   Clock,
   Heart,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -267,6 +269,10 @@ function InstanceBlock({
     day: "numeric",
     month: "long",
   });
+  // Les instances passées sont repliées par défaut : on garde l'accès aux
+  // actions post-trajet (noter, remercier) sans empiler des blocs entiers.
+  const [expanded, setExpanded] = useState(!isPast);
+  const totalToShow = activeReservations.length + completedReservations.length;
 
   async function cancelDate() {
     const msg =
@@ -314,66 +320,93 @@ function InstanceBlock({
   return (
     <div className="px-4 py-3">
       <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="flex items-center gap-1.5 font-medium capitalize">
-          <Calendar className="size-3.5 text-slate-400 dark:text-slate-500" />
-          {dateLabel}
-        </span>
+        {isPast ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex flex-1 items-center gap-1.5 text-left font-medium capitalize text-slate-500 hover:text-slate-700 transition dark:text-slate-400 dark:hover:text-slate-200"
+            aria-expanded={expanded}
+          >
+            {expanded ? (
+              <ChevronDown className="size-3.5 shrink-0" />
+            ) : (
+              <ChevronRight className="size-3.5 shrink-0" />
+            )}
+            <span>{dateLabel}</span>
+            {!expanded && totalToShow > 0 && (
+              <span className="ml-1 text-xs font-normal text-slate-400 normal-case dark:text-slate-500">
+                · {totalToShow} passager{totalToShow > 1 ? "s" : ""}
+              </span>
+            )}
+          </button>
+        ) : (
+          <span className="flex items-center gap-1.5 font-medium capitalize">
+            <Calendar className="size-3.5 text-slate-400 dark:text-slate-500" />
+            {dateLabel}
+          </span>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">
             {acceptees}/{placesTotal} places prises
           </span>
-          <button
-            type="button"
-            onClick={cancelDate}
-            disabled={cancelling}
-            title="Annuler cette date"
-            className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-300"
-          >
-            <CalendarX className="size-3.5" />
-          </button>
+          {!isPast && (
+            <button
+              type="button"
+              onClick={cancelDate}
+              disabled={cancelling}
+              title="Annuler cette date"
+              className="inline-flex size-6 items-center justify-center rounded-md text-slate-400 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-300"
+            >
+              <CalendarX className="size-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {!isPast && instance.date === today && activeReservations.some((r) => r.statut === "accepted") && (
-        <div className="mt-2 flex">
-          <ConducteurTracking trajetInstanceId={instance.id} />
-        </div>
-      )}
+      {(!isPast || expanded) && (
+        <>
+          {!isPast && instance.date === today && activeReservations.some((r) => r.statut === "accepted") && (
+            <div className="mt-2 flex">
+              <ConducteurTracking trajetInstanceId={instance.id} />
+            </div>
+          )}
 
-      {!isPast && acceptees > 0 && (
-        <div className="mt-3">
-          <OptimizedRouteCard
-            conducteurAdresse={departAdresse}
-            heureDepart={heureDepart}
-            passengers={activeReservations
-              .filter((r) => r.statut === "accepted" && r.passager)
-              .map((r) => ({
-                reservationId: r.id,
-                prenom: r.passager?.prenom ?? "",
-                nom: r.passager?.nom ?? "",
-                photoUrl: r.passager?.photo_url ?? null,
-                pickupAdresse: r.pickup_adresse,
-              }))}
-            eglisePos={{ lat: 49.146943, lng: 6.175955 }}
-            egliseLabel="ICC Metz"
-          />
-        </div>
-      )}
+          {!isPast && acceptees > 0 && (
+            <div className="mt-3">
+              <OptimizedRouteCard
+                conducteurAdresse={departAdresse}
+                heureDepart={heureDepart}
+                passengers={activeReservations
+                  .filter((r) => r.statut === "accepted" && r.passager)
+                  .map((r) => ({
+                    reservationId: r.id,
+                    prenom: r.passager?.prenom ?? "",
+                    nom: r.passager?.nom ?? "",
+                    photoUrl: r.passager?.photo_url ?? null,
+                    pickupAdresse: r.pickup_adresse,
+                  }))}
+                eglisePos={{ lat: 49.146943, lng: 6.175955 }}
+                egliseLabel="ICC Metz"
+              />
+            </div>
+          )}
 
-      {allDisplayed.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Aucune demande pour cette date.</p>
-      ) : (
-        <ul className="mt-2 space-y-2">
-          {allDisplayed.map((r) => (
-            <ReservationRow
-              key={r.id}
-              reservation={r}
-              isPast={isPast}
-              initiallyRated={alreadyRatedIds.includes(r.id)}
-              passagerRating={r.passager ? passagerRatings.get(r.passager.id) : undefined}
-            />
-          ))}
-        </ul>
+          {allDisplayed.length === 0 ? (
+            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Aucune demande pour cette date.</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {allDisplayed.map((r) => (
+                <ReservationRow
+                  key={r.id}
+                  reservation={r}
+                  isPast={isPast}
+                  initiallyRated={alreadyRatedIds.includes(r.id)}
+                  passagerRating={r.passager ? passagerRatings.get(r.passager.id) : undefined}
+                />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
