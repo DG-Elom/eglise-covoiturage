@@ -121,9 +121,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let nEnvoyes = 0;
   let nSkipped = 0;
+  const skipReasons: string[] = [];
+  const errors: string[] = [];
   for (const r of results) {
-    if ("ok" in r) nEnvoyes++;
-    else nSkipped++;
+    if ("ok" in r) {
+      nEnvoyes++;
+    } else if ("skipped" in r) {
+      nSkipped++;
+      skipReasons.push(r.reason);
+    } else {
+      nSkipped++;
+      errors.push(r.error);
+    }
   }
 
   await admin
@@ -136,5 +145,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     n_destinataires: recipients.length,
     n_envoyes: nEnvoyes,
     n_skipped: nSkipped,
+    skip_reasons: skipReasons.length > 0 ? skipReasons : undefined,
+    errors: errors.length > 0 ? errors : undefined,
   });
 }

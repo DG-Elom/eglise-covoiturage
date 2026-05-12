@@ -1,0 +1,14 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /profil
+Disallow: /messages
+Disallow: /demandes
+Disallow: /trajets
+Disallow: /calendrier
+Allow: /
+Allow: /login
+Allow: /legal
+Allow: /welcome
