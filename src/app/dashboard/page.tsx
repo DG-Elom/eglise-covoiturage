@@ -138,7 +138,7 @@ export default async function DashboardPage() {
       .select(
         `id, date, sens, pickup_adresse, notes, created_at,
          passager:profiles!demandes_passager_passager_id_fkey (
-           id, prenom, nom, telephone, photo_url
+           id, prenom, nom, photo_url
          ),
          culte:cultes (id, libelle, heure)`,
       )

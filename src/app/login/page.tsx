@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Mail, Loader2, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
 
+const EMAIL_COOLDOWN_SECONDS = 60;
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
+  const [cooldown, setCooldown] = useState(0);
   const configured = isSupabaseConfigured();
   const supabase = configured ? createClient() : null;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   async function signInWithGoogle() {
     if (!supabase) return;
@@ -27,7 +36,7 @@ export default function LoginPage() {
 
   async function signInWithEmail(e: React.FormEvent) {
     e.preventDefault();
-    if (!supabase) return;
+    if (!supabase || cooldown > 0) return;
     setLoading("email");
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -35,9 +44,17 @@ export default function LoginPage() {
     });
     setLoading(null);
     if (error) {
-      toast.error(error.message);
+      if (
+        error.message?.includes("rate_limit") ||
+        error.message?.includes("rate limit")
+      ) {
+        toast.error("Trop de demandes. Réessayez dans quelques minutes.");
+      } else {
+        toast.error("Erreur lors de l'envoi. Vérifiez votre email et réessayez.");
+      }
     } else {
-      toast.success("Lien de connexion envoyé par email");
+      toast.success("Lien de connexion envoyé ! Vérifiez votre boîte mail.");
+      setCooldown(EMAIL_COOLDOWN_SECONDS);
     }
   }
 
@@ -98,7 +115,7 @@ export default function LoginPage() {
           />
           <button
             type="submit"
-            disabled={loading !== null || !email || !configured}
+            disabled={loading !== null || !email || !configured || cooldown > 0}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >
             {loading === "email" ? (
@@ -106,7 +123,9 @@ export default function LoginPage() {
             ) : (
               <Mail className="size-4" />
             )}
-            Recevoir un lien magique
+            {cooldown > 0
+              ? `Lien envoyé ! Réessayer dans ${cooldown}s`
+              : "Recevoir un lien de connexion"}
           </button>
         </form>
 

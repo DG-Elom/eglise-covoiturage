@@ -13,7 +13,6 @@ export type DemandeProcheRow = {
     id: string;
     prenom: string;
     nom: string;
-    telephone: string;
     photo_url: string | null;
   } | null;
   culte: { id: string; libelle: string; heure: string } | null;
@@ -84,24 +83,6 @@ export function DemandesProchesSection({
                     <Plus className="size-3.5" />
                     Proposer un trajet
                   </Link>
-                )}
-                {d.passager?.telephone && (
-                  <a
-                    href={`tel:${d.passager.telephone}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    Appeler
-                  </a>
-                )}
-                {d.passager?.telephone && (
-                  <a
-                    href={`https://wa.me/${d.passager.telephone.replace(/[^\d+]/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    WhatsApp
-                  </a>
                 )}
               </div>
             </div>
