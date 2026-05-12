@@ -66,6 +66,8 @@ export function SendSmsButton({
       const data = (await res.json()) as {
         n_envoyes?: number;
         error?: string;
+        skip_reasons?: string[];
+        errors?: string[];
       };
       if (!res.ok) {
         toast.error(data.error ?? "Envoi echoue");
@@ -74,8 +76,18 @@ export function SendSmsButton({
       if (data.n_envoyes === 1) {
         toast.success(`SMS envoye a ${userName}`);
       } else {
+        const reason = data.skip_reasons?.[0] ?? data.errors?.[0];
+        const REASON_LABELS: Record<string, string> = {
+          no_phone: "Pas de numero de telephone enregistre",
+          invalid_phone: "Numero de telephone au format invalide",
+          opted_out: "Cet utilisateur a desactive les SMS",
+          already_sent: "SMS deja envoye recemment",
+          no_api_key: "Cle API Brevo manquante (config serveur)",
+        };
         toast.error(
-          "Pas envoye (numero invalide, opt-out, ou deja envoye recemment)",
+          reason
+            ? REASON_LABELS[reason] ?? `Echec: ${reason}`
+            : "Pas envoye (raison inconnue)",
         );
       }
       setOpen(false);
