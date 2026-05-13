@@ -65,7 +65,7 @@ create table trajets (
   sens sens_trajet not null,
   places_total smallint not null check (places_total between 1 and 8),
   rayon_detour_km numeric(3,1) not null default 1.5
-    check (rayon_detour_km between 0.1 and 5.0),
+    check (rayon_detour_km between 0.5 and 10.0),
   actif boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

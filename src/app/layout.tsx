@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { pwaMetadata } from "@/components/pwa-meta";
 import { SwRegister } from "@/components/sw-register";
+import { BugReportButton } from "@/components/bug-report-button";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
           <QueryProvider>
             <SwRegister />
             {children}
+            <BugReportButton />
             <Toaster richColors position="top-center" />
           </QueryProvider>
         </ThemeProvider>

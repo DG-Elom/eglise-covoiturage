@@ -165,6 +165,31 @@ export type Database = {
         Update: Partial<{ annule_par_conducteur: boolean; motif_annulation: string | null }>;
         Relationships: [];
       };
+      bug_reports: {
+        Row: {
+          id: string;
+          auteur_id: string;
+          description: string;
+          categorie: "crash" | "affichage" | "fonctionnalite" | "performance" | "autre";
+          page_url: string | null;
+          user_agent: string | null;
+          statut: "ouvert" | "en_cours" | "resolu" | "ferme";
+          note_admin: string | null;
+          created_at: string;
+        };
+        Insert: {
+          auteur_id: string;
+          description: string;
+          categorie: "crash" | "affichage" | "fonctionnalite" | "performance" | "autre";
+          page_url?: string | null;
+          user_agent?: string | null;
+        };
+        Update: Partial<{
+          statut: "ouvert" | "en_cours" | "resolu" | "ferme";
+          note_admin: string | null;
+        }>;
+        Relationships: [];
+      };
       signalements: {
         Row: {
           id: string;
