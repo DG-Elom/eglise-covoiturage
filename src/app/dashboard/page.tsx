@@ -341,6 +341,7 @@ export default async function DashboardPage() {
             trajets={mesTrajets}
             alreadyRatedIds={alreadyRatedIdsAsConduct}
             passagerRatings={passagerRatings}
+            myPrenom={profile.prenom}
           />
         </section>
       )}

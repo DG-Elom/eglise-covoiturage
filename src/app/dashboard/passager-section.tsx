@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle, Star, Heart } from "lucide-react";
+import { Calendar, MapPin, Phone, Car, X, Clock, Check, MessageCircle, MessageSquareText, Star, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -222,6 +222,15 @@ function ReservationCard({
               >
                 <Phone className="size-3" />
                 {conducteur.telephone}
+              </a>
+              <a
+                href={`sms:${conducteur.telephone}?body=${encodeURIComponent(
+                  `Bonjour ${conducteur.prenom}, c'est ${myPrenom} pour notre covoiturage ICC Metz 🚗`,
+                )}`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs hover:bg-emerald-50 transition dark:border-emerald-700 dark:bg-slate-900 dark:hover:bg-emerald-950/40"
+              >
+                <MessageSquareText className="size-3" />
+                SMS
               </a>
               <Link
                 href={`/messages/${reservation.id}`}

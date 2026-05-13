@@ -14,6 +14,7 @@ import {
   CalendarX,
   Pencil,
   MessageCircle,
+  MessageSquareText,
   Star,
   Clock,
   Heart,
@@ -77,10 +78,12 @@ export function ConducteurSection({
   trajets,
   alreadyRatedIds,
   passagerRatings,
+  myPrenom,
 }: {
   trajets: ConducteurTrajet[];
   alreadyRatedIds: string[];
   passagerRatings: Map<string, RatingInfo>;
+  myPrenom: string;
 }) {
   if (trajets.length === 0) {
     return (
@@ -98,6 +101,7 @@ export function ConducteurSection({
           trajet={t}
           alreadyRatedIds={alreadyRatedIds}
           passagerRatings={passagerRatings}
+          myPrenom={myPrenom}
         />
       ))}
     </div>
@@ -108,10 +112,12 @@ function TrajetCard({
   trajet,
   alreadyRatedIds,
   passagerRatings,
+  myPrenom,
 }: {
   trajet: ConducteurTrajet;
   alreadyRatedIds: string[];
   passagerRatings: Map<string, RatingInfo>;
+  myPrenom: string;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -228,6 +234,7 @@ function TrajetCard({
             heureDepart={trajet.heure_depart}
             alreadyRatedIds={alreadyRatedIds}
             passagerRatings={passagerRatings}
+            myPrenom={myPrenom}
           />
         ))}
         {instances.length === 0 && (
@@ -245,6 +252,7 @@ function InstanceBlock({
   heureDepart,
   alreadyRatedIds,
   passagerRatings,
+  myPrenom,
 }: {
   instance: ConducteurTrajet["trajets_instances"][number];
   placesTotal: number;
@@ -252,6 +260,7 @@ function InstanceBlock({
   heureDepart: string;
   alreadyRatedIds: string[];
   passagerRatings: Map<string, RatingInfo>;
+  myPrenom: string;
 }) {
   const router = useRouter();
   const [cancelling, setCancelling] = useState(false);
@@ -402,6 +411,7 @@ function InstanceBlock({
                   isPast={isPast}
                   initiallyRated={alreadyRatedIds.includes(r.id)}
                   passagerRating={r.passager ? passagerRatings.get(r.passager.id) : undefined}
+                  myPrenom={myPrenom}
                 />
               ))}
             </ul>
@@ -417,11 +427,13 @@ function ReservationRow({
   isPast,
   initiallyRated,
   passagerRating,
+  myPrenom,
 }: {
   reservation: ConducteurTrajet["trajets_instances"][number]["reservations"][number];
   isPast: boolean;
   initiallyRated: boolean;
   passagerRating?: RatingInfo;
+  myPrenom: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<
@@ -595,6 +607,15 @@ function ReservationRow({
           >
             <Phone className="size-3" />
             {passager.telephone}
+          </a>
+          <a
+            href={`sms:${passager.telephone}?body=${encodeURIComponent(
+              `Bonjour ${passager.prenom}, c'est ${myPrenom} pour notre covoiturage ICC Metz 🚗`,
+            )}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            <MessageSquareText className="size-3" />
+            SMS
           </a>
           <Link
             href={`/messages/${reservation.id}`}
