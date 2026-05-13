@@ -102,6 +102,41 @@ ${btn(`${d.appUrl}/trajets/recherche`, "Chercher un autre trajet")}`,
   return { subject, html };
 }
 
+type BugReportEmailData = {
+  auteurPrenom: string;
+  auteurNom: string;
+  categorie: string;
+  description: string;
+  pageUrl: string | null;
+  date: string;
+  appUrl: string;
+};
+
+const CATEGORIE_LABEL: Record<string, string> = {
+  crash: "L'app plante",
+  affichage: "Problème d'affichage",
+  fonctionnalite: "Fonctionnalité cassée",
+  performance: "Lenteur",
+  autre: "Autre",
+};
+
+export function emailNouveauBugReport(d: BugReportEmailData) {
+  const subject = `[Bug] ${CATEGORIE_LABEL[d.categorie] ?? d.categorie} signalé par ${d.auteurPrenom}`;
+  const html = shell(
+    "Nouveau bug signalé",
+    `<p><strong>${d.auteurPrenom} ${d.auteurNom}</strong> a signalé un bug :</p>
+${infoBox([
+  ["Reporter", `${d.auteurPrenom} ${d.auteurNom}`],
+  ["Catégorie", CATEGORIE_LABEL[d.categorie] ?? d.categorie],
+  ["Page", d.pageUrl ?? "—"],
+  ["Date", d.date],
+])}
+<p style="background:#f8fafc;border-radius:8px;padding:12px;font-size:14px;white-space:pre-wrap;">${d.description}</p>
+${btn(`${d.appUrl}/admin/bugs`, "Voir les bugs")}`,
+  );
+  return { subject, html };
+}
+
 export function emailTrajetAnnuleParConducteur(d: ReservationEmailData) {
   const subject = `Trajet annulé pour le ${d.date}`;
   const html = shell(
