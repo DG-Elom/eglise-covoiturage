@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bug, Check, Clock, X, Loader2, ExternalLink, Copy } from "lucide-react";
+import { Bug, Check, Clock, X, Loader2, ExternalLink, Copy, MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -39,10 +39,22 @@ export type BugReportRow = {
   statut: "ouvert" | "en_cours" | "resolu" | "ferme";
   note_admin: string | null;
   created_at: string;
-  auteur: { id: string; prenom: string; nom: string; photo_url: string | null } | null;
+  auteur: {
+    id: string;
+    prenom: string;
+    nom: string;
+    photo_url: string | null;
+    telephone: string | null;
+  } | null;
 };
 
-export function BugsSection({ bugs }: { bugs: BugReportRow[] }) {
+export function BugsSection({
+  bugs,
+  myPrenom,
+}: {
+  bugs: BugReportRow[];
+  myPrenom: string;
+}) {
   const ouverts = bugs.filter((b) => b.statut === "ouvert" || b.statut === "en_cours");
   const fermes = bugs.filter((b) => b.statut === "resolu" || b.statut === "ferme");
 
@@ -65,7 +77,7 @@ export function BugsSection({ bugs }: { bugs: BugReportRow[] }) {
       ) : (
         <div className="space-y-2">
           {ouverts.map((b) => (
-            <BugCard key={b.id} bug={b} />
+            <BugCard key={b.id} bug={b} myPrenom={myPrenom} />
           ))}
           {fermes.length > 0 && (
             <details className="mt-3">
@@ -75,7 +87,7 @@ export function BugsSection({ bugs }: { bugs: BugReportRow[] }) {
               </summary>
               <div className="mt-2 space-y-2">
                 {fermes.map((b) => (
-                  <BugCard key={b.id} bug={b} />
+                  <BugCard key={b.id} bug={b} myPrenom={myPrenom} />
                 ))}
               </div>
             </details>
@@ -108,7 +120,7 @@ function formatBugForClipboard(bug: BugReportRow): string {
   return lines.filter((l) => l !== null).join("\n");
 }
 
-function BugCard({ bug }: { bug: BugReportRow }) {
+function BugCard({ bug, myPrenom }: { bug: BugReportRow; myPrenom: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -204,14 +216,27 @@ function BugCard({ bug }: { bug: BugReportRow }) {
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={copyBug}
-          title="Copier le bug formaté"
-          className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-        >
-          {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
-        </button>
+        <div className="flex shrink-0 flex-col gap-1">
+          <button
+            type="button"
+            onClick={copyBug}
+            title="Copier le bug formaté"
+            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          >
+            {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+          </button>
+          {bug.auteur?.telephone && (
+            <a
+              href={`sms:${bug.auteur.telephone}?body=${encodeURIComponent(
+                `Bonjour ${bug.auteur.prenom}, c'est ${myPrenom} (admin Covoiturage ICC Metz). Concernant ton signalement "${bug.description.slice(0, 60)}${bug.description.length > 60 ? "…" : ""}", peux-tu me donner plus de detail ? Merci 🙏`,
+              )}`}
+              title={`Envoyer un SMS à ${bug.auteur.prenom} pour plus de détails`}
+              className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 transition dark:text-slate-500 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
+            >
+              <MessageSquareText className="size-4" />
+            </a>
+          )}
+        </div>
       </div>
 
       {(bug.statut === "ouvert" || bug.statut === "en_cours") && (
