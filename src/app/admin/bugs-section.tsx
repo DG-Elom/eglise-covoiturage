@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bug, Check, Clock, X, Loader2, ExternalLink } from "lucide-react";
+import { Bug, Check, Clock, X, Loader2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
@@ -86,9 +86,44 @@ export function BugsSection({ bugs }: { bugs: BugReportRow[] }) {
   );
 }
 
+function formatBugForClipboard(bug: BugReportRow): string {
+  const date = new Date(bug.created_at).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const auteur = bug.auteur ? `${bug.auteur.prenom} ${bug.auteur.nom}` : "—";
+  const lines = [
+    `[${(CATEGORIE_LABEL[bug.categorie] ?? bug.categorie).toUpperCase()}] · ${bug.statut}`,
+    `Date : ${date}`,
+    `Auteur : ${auteur}`,
+    bug.page_url ? `Page : ${bug.page_url}` : null,
+    bug.user_agent ? `User-Agent : ${bug.user_agent}` : null,
+    "",
+    "Description :",
+    bug.description,
+  ];
+  return lines.filter((l) => l !== null).join("\n");
+}
+
 function BugCard({ bug }: { bug: BugReportRow }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function copyBug() {
+    const text = formatBugForClipboard(bug);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Bug copié dans le presse-papier");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Impossible de copier. Sélectionne manuellement.");
+    }
+  }
 
   async function setStatut(statut: "en_cours" | "resolu" | "ferme", action: string) {
     setLoading(action);
@@ -169,6 +204,14 @@ function BugCard({ bug }: { bug: BugReportRow }) {
             </p>
           )}
         </div>
+        <button
+          type="button"
+          onClick={copyBug}
+          title="Copier le bug formaté"
+          className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+        </button>
       </div>
 
       {(bug.statut === "ouvert" || bug.statut === "en_cours") && (
