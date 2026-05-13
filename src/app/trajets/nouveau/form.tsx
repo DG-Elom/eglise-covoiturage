@@ -571,7 +571,7 @@ export function NouveauTrajetForm({
             </span>
             <input
               type="range"
-              min={1}
+              min={0.5}
               max={10}
               step={0.5}
               value={rayon}

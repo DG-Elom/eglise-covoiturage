@@ -94,7 +94,7 @@ function sanitize(raw: unknown, validCulteIds: Set<string>): ParsedTrajet {
     typeof obj.rayon_detour_km === "number" &&
     Number.isFinite(obj.rayon_detour_km)
   ) {
-    out.rayon_detour_km = clamp(obj.rayon_detour_km, 0.5, 5);
+    out.rayon_detour_km = clamp(obj.rayon_detour_km, 0.5, 10);
   }
 
   if (
