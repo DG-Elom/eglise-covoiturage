@@ -4,7 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Car, Calendar, Search, Ban, CheckCircle2, Trash2, BarChart3 } from "lucide-react";
+import {
+  Car,
+  Calendar,
+  Search,
+  Ban,
+  CheckCircle2,
+  Trash2,
+  BarChart3,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
@@ -60,15 +71,79 @@ function ActifBadge({ actif }: { actif: boolean }) {
   );
 }
 
+type SortKey =
+  | "conducteur"
+  | "depart_adresse"
+  | "culte"
+  | "heure_depart"
+  | "sens"
+  | "places_total"
+  | "rayon_detour_km"
+  | "futures"
+  | "actif"
+  | "created_at";
+type SortDir = "asc" | "desc";
+
+function compareStrings(a: string, b: string): number {
+  return a.localeCompare(b, "fr", { sensitivity: "base" });
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  align,
+  currentSort,
+  onToggle,
+}: {
+  label: React.ReactNode;
+  sortKey: SortKey;
+  align?: "left" | "center";
+  currentSort: { key: SortKey; dir: SortDir };
+  onToggle: (key: SortKey) => void;
+}) {
+  const active = currentSort.key === sortKey;
+  const Icon = !active ? ArrowUpDown : currentSort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(sortKey)}
+      className={`inline-flex items-center gap-1 font-medium transition hover:text-slate-900 dark:hover:text-slate-100 ${
+        active ? "text-slate-900 dark:text-slate-100" : ""
+      } ${align === "center" ? "justify-center" : ""}`}
+    >
+      {label}
+      <Icon className={`size-3 ${active ? "" : "opacity-40"}`} />
+    </button>
+  );
+}
+
 export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filterActif, setFilterActif] = useState<"all" | "actif" | "inactif">(
     "all",
   );
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const today = new Date().toISOString().slice(0, 10);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      // Defaut : numerique/date = desc (recent/grand en haut), texte = asc
+      const numericKeys: SortKey[] = [
+        "places_total",
+        "rayon_detour_km",
+        "futures",
+        "created_at",
+      ];
+      setSortDir(numericKeys.includes(key) ? "desc" : "asc");
+    }
+  }
 
   const filtered = trajets.filter((t) => {
     const q = search.toLowerCase();
@@ -83,6 +158,45 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
       (filterActif === "inactif" && !t.actif);
     return matchSearch && matchActif;
   });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    switch (sortKey) {
+      case "conducteur": {
+        const an = a.conducteur ? `${a.conducteur.prenom} ${a.conducteur.nom}` : "";
+        const bn = b.conducteur ? `${b.conducteur.prenom} ${b.conducteur.nom}` : "";
+        return compareStrings(an, bn) * dir;
+      }
+      case "depart_adresse":
+        return compareStrings(a.depart_adresse, b.depart_adresse) * dir;
+      case "culte": {
+        const al = a.culte?.libelle ?? "";
+        const bl = b.culte?.libelle ?? "";
+        return compareStrings(al, bl) * dir;
+      }
+      case "heure_depart":
+        return compareStrings(a.heure_depart, b.heure_depart) * dir;
+      case "sens":
+        return compareStrings(a.sens, b.sens) * dir;
+      case "places_total":
+        return (a.places_total - b.places_total) * dir;
+      case "rayon_detour_km":
+        return (a.rayon_detour_km - b.rayon_detour_km) * dir;
+      case "futures":
+        return (
+          instancesFuturesCount(a.trajets_instances, today) -
+          instancesFuturesCount(b.trajets_instances, today)
+        ) * dir;
+      case "actif":
+        return ((a.actif ? 1 : 0) - (b.actif ? 1 : 0)) * dir;
+      case "created_at":
+        return compareStrings(a.created_at, b.created_at) * dir;
+      default:
+        return 0;
+    }
+  });
+
+  const currentSort = { key: sortKey, dir: sortDir };
 
   async function toggleActif(trajet: TrajetRow) {
     const action = trajet.actif ? "Désactiver" : "Activer";
@@ -171,25 +285,49 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-left text-xs text-slate-500 uppercase tracking-wide dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                <th className="px-4 py-3 font-medium">Conducteur</th>
-                <th className="px-4 py-3 font-medium">Adresse départ</th>
-                <th className="px-4 py-3 font-medium">Culte</th>
-                <th className="px-4 py-3 font-medium">Heure départ</th>
-                <th className="px-4 py-3 font-medium">Sens</th>
-                <th className="px-4 py-3 font-medium text-center">Places</th>
-                <th className="px-4 py-3 font-medium text-center">Rayon km</th>
-                <th className="px-4 py-3 font-medium text-center">
-                  <span className="flex items-center justify-center gap-1">
-                    <Calendar className="size-3" />
-                    Futures
-                  </span>
+                <th className="px-4 py-3">
+                  <SortHeader label="Conducteur" sortKey="conducteur" currentSort={currentSort} onToggle={toggleSort} />
                 </th>
-                <th className="px-4 py-3 font-medium">Statut</th>
+                <th className="px-4 py-3">
+                  <SortHeader label="Adresse départ" sortKey="depart_adresse" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3">
+                  <SortHeader label="Culte" sortKey="culte" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3">
+                  <SortHeader label="Heure départ" sortKey="heure_depart" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3">
+                  <SortHeader label="Sens" sortKey="sens" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3 text-center">
+                  <SortHeader label="Places" sortKey="places_total" align="center" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3 text-center">
+                  <SortHeader label="Rayon km" sortKey="rayon_detour_km" align="center" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
+                <th className="px-4 py-3 text-center">
+                  <SortHeader
+                    label={
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="size-3" />
+                        Futures
+                      </span>
+                    }
+                    sortKey="futures"
+                    align="center"
+                    currentSort={currentSort}
+                    onToggle={toggleSort}
+                  />
+                </th>
+                <th className="px-4 py-3">
+                  <SortHeader label="Statut" sortKey="actif" currentSort={currentSort} onToggle={toggleSort} />
+                </th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.map((t) => {
+              {sorted.map((t) => {
                 const futuresCount = instancesFuturesCount(
                   t.trajets_instances,
                   today,

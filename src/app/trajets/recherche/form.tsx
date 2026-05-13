@@ -77,8 +77,19 @@ export function RechercheForm({
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!adresse || !culteId || !date) {
-      toast.error("Renseigne tous les champs");
+    // Feedback ciblé : chaque champ manquant a son propre message pour eviter le
+    // "rien ne se passe" sur mobile (cas typique : adresse tapee mais suggestion
+    // jamais selectionnee dans l'autocomplete)
+    if (!adresse) {
+      toast.error("Choisis une adresse dans la liste de suggestions");
+      return;
+    }
+    if (!culteId) {
+      toast.error("Choisis un programme");
+      return;
+    }
+    if (!date) {
+      toast.error("Choisis une date");
       return;
     }
     // Garde-fou anti-null-island : refuse si l'adresse n'a pas de coordonnees valides
@@ -317,7 +328,7 @@ export function RechercheForm({
 
         <button
           type="submit"
-          disabled={loading || !adresse || !culteId || !date}
+          disabled={loading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition active:scale-95 transition-transform dark:bg-emerald-600 dark:hover:bg-emerald-500"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
