@@ -157,10 +157,23 @@ export function RechercheForm({
     if (res.status === 409) {
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
+        message?: string;
         alternatives?: TrajetAlternative[];
       };
       if (body.error === "instance_full") {
         setFullDialog({ alternatives: body.alternatives ?? [] });
+        return;
+      }
+      if (body.error === "already_requested") {
+        toast.info(
+          body.message ?? "Tu as déjà une demande pour ce trajet.",
+          {
+            action: {
+              label: "Voir mes demandes",
+              onClick: () => router.push("/dashboard"),
+            },
+          },
+        );
         return;
       }
     }
@@ -171,13 +184,13 @@ export function RechercheForm({
       return;
     }
 
-    const data = (await res.json()) as { id?: string };
+    const data = (await res.json()) as { id?: string; resubmitted?: boolean };
     if (!data.id) {
       toast.error("Erreur inattendue");
       return;
     }
     void notify("reservation_created", data.id);
-    toast.success("Demande envoyée !");
+    toast.success(data.resubmitted ? "Demande renouvelée !" : "Demande envoyée !");
     router.push("/dashboard");
     router.refresh();
   }
