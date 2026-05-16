@@ -27,6 +27,11 @@ const nextConfig: NextConfig = {
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://events.mapbox.com https://accounts.google.com",
               "frame-src https://accounts.google.com",
               "frame-ancestors 'none'",
+              // mapbox-gl decode les vector tiles dans un Web Worker cree via blob:.
+              // Sans worker-src/child-src explicite, default-src 'self' bloque ce
+              // worker et la carte n'affiche que les markers (fond vide).
+              "worker-src 'self' blob:",
+              "child-src 'self' blob:",
             ].join("; "),
           },
         ],
