@@ -29,6 +29,7 @@ import { defaultNavApp, buildNavUrl } from "@/lib/navigation";
 import { notify } from "@/lib/notify";
 
 import { confirmToast } from "@/lib/confirm";
+import { humanizeApiError } from "@/lib/errors";
 import { ReportButton } from "@/components/report-button";
 import { OptimizedRouteCard } from "@/components/optimized-route-card";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
@@ -175,7 +176,7 @@ function TrajetCard({
 
     setDeleting(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Trajet supprimé");
@@ -317,7 +318,7 @@ function InstanceBlock({
 
     setCancelling(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Date annulée");
@@ -471,7 +472,7 @@ function ReservationRow({
       .eq("id", reservation.id);
     setLoading(null);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     void notify("reservation_refused", reservation.id);
@@ -493,7 +494,7 @@ function ReservationRow({
       .eq("id", reservation.id);
     setLoading(null);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Remise en attente");
@@ -509,7 +510,7 @@ function ReservationRow({
       .eq("id", reservation.id);
     setLoading(null);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success(statut === "completed" ? "Marqué comme effectué" : "Marqué pas venu");

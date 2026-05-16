@@ -58,6 +58,10 @@ export async function POST(req: Request) {
   )("instance_places_restantes", { p_instance_id: trajet_instance_id });
 
   if (rpcError) {
+    console.error("[reservations] places_restantes RPC failed:", {
+      trajet_instance_id,
+      rpcError,
+    });
     return NextResponse.json({ error: rpcError.message }, { status: 500 });
   }
 
@@ -70,6 +74,75 @@ export async function POST(req: Request) {
       sens,
       date,
     );
+  }
+
+  // Re-demande : la contrainte UNIQUE(passager_id, trajet_instance_id, sens)
+  // empeche un INSERT si l'utilisateur a deja une reservation sur ce trajet/sens.
+  // On lit l'existante : refused/cancelled => on la remet en pending (re-demande
+  // autorisee), pending/accepted/completed => on renvoie un message clair.
+  const { data: existing, error: existingErr } = await supabase
+    .from("reservations")
+    .select("id, statut")
+    .eq("passager_id", user.id)
+    .eq("trajet_instance_id", trajet_instance_id)
+    .eq("sens", sens)
+    .maybeSingle();
+
+  if (existingErr) {
+    console.error("[reservations] lookup existing failed:", {
+      passager_id: user.id,
+      trajet_instance_id,
+      sens,
+      existingErr,
+    });
+    return NextResponse.json({ error: existingErr.message }, { status: 500 });
+  }
+
+  if (existing) {
+    if (existing.statut === "pending" || existing.statut === "accepted") {
+      return NextResponse.json(
+        {
+          error: "already_requested",
+          message:
+            existing.statut === "accepted"
+              ? "Tu as déjà une réservation acceptée pour ce trajet."
+              : "Tu as déjà une demande en attente pour ce trajet.",
+          id: existing.id,
+        },
+        { status: 409 },
+      );
+    }
+    // refused / cancelled / completed / no_show => on reset en pending
+    const { data: updated, error: updateErr } = await supabase
+      .from("reservations")
+      .update({
+        statut: "pending",
+        pickup_adresse,
+        pickup_position: `POINT(${pickup_lng} ${pickup_lat})`,
+        motif_refus: null,
+        traitee_le: null,
+        cancelled_le: null,
+        demande_le: new Date().toISOString(),
+      } as never)
+      .eq("id", existing.id)
+      .select("id")
+      .single();
+
+    if (updateErr) {
+      console.error("[reservations] re-request UPDATE failed:", {
+        existing_id: existing.id,
+        previous_statut: existing.statut,
+        updateErr,
+      });
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+    if (!updated) {
+      console.error("[reservations] re-request UPDATE returned no row:", {
+        existing_id: existing.id,
+      });
+      return NextResponse.json({ error: "update_failed" }, { status: 500 });
+    }
+    return NextResponse.json({ id: updated.id, resubmitted: true });
   }
 
   // Insert — le trigger BEFORE INSERT sécurise la race condition
@@ -96,9 +169,19 @@ export async function POST(req: Request) {
         date,
       );
     }
+    console.error("[reservations] INSERT failed:", {
+      passager_id: user.id,
+      trajet_instance_id,
+      sens,
+      error,
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (!data) {
+    console.error("[reservations] INSERT returned no row:", {
+      passager_id: user.id,
+      trajet_instance_id,
+    });
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 

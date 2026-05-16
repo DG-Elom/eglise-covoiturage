@@ -18,6 +18,7 @@ import type { ConducteurRating } from "./page";
 import type { TrajetAlternative } from "@/lib/capacity";
 import { PlacesRestantesLive } from "@/components/places-restantes-live";
 import { formatDetour } from "@/lib/detour";
+import { humanizeApiError } from "@/lib/errors";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -111,7 +112,7 @@ export function RechercheForm({
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     // Filtre les detours aberrants (> 100 km = bug geocoding cote conducteur)
@@ -157,27 +158,40 @@ export function RechercheForm({
     if (res.status === 409) {
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
+        message?: string;
         alternatives?: TrajetAlternative[];
       };
       if (body.error === "instance_full") {
         setFullDialog({ alternatives: body.alternatives ?? [] });
         return;
       }
+      if (body.error === "already_requested") {
+        toast.info(
+          body.message ?? "Tu as déjà une demande pour ce trajet.",
+          {
+            action: {
+              label: "Voir mes demandes",
+              onClick: () => router.push("/dashboard"),
+            },
+          },
+        );
+        return;
+      }
     }
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(body.error ?? "Erreur");
+      toast.error(humanizeApiError(body.error));
       return;
     }
 
-    const data = (await res.json()) as { id?: string };
+    const data = (await res.json()) as { id?: string; resubmitted?: boolean };
     if (!data.id) {
       toast.error("Erreur inattendue");
       return;
     }
     void notify("reservation_created", data.id);
-    toast.success("Demande envoyée !");
+    toast.success(data.resubmitted ? "Demande renouvelée !" : "Demande envoyée !");
     router.push("/dashboard");
     router.refresh();
   }
@@ -416,7 +430,7 @@ function PublierDemande({
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Échec de la publication");
+        toast.error(humanizeApiError(data.error));
         setPublishing(false);
         return;
       }

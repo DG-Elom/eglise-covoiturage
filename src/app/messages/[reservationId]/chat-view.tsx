@@ -5,6 +5,7 @@ import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { playNotifSound } from "@/lib/notification-sound";
+import { humanizeApiError } from "@/lib/errors";
 
 export type ChatMessage = {
   id: string;
@@ -115,7 +116,7 @@ export function ChatView({
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Échec de l'envoi");
+        toast.error(humanizeApiError(data.error));
         return;
       }
       setDraft("");

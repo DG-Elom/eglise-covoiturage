@@ -13,6 +13,7 @@ import { NotificationSoundToggle } from "@/components/notification-sound-toggle"
 import { NotificationPreferences } from "@/components/notification-preferences";
 import { MesAbonnements } from "@/components/mes-abonnements";
 import { geocodeAddress } from "@/lib/mapbox";
+import { humanizeApiError } from "@/lib/errors";
 import { UserBadges } from "@/components/user-badges";
 import type { Database } from "@/lib/supabase/types";
 
@@ -56,7 +57,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
       });
       const data = (await res.json()) as { improved?: string; error?: string };
       if (!res.ok) {
-        toast.error(data.error ?? "Erreur lors de l'amélioration");
+        toast.error(humanizeApiError(data.error));
         return;
       }
       if (data.improved) setBio(data.improved);
@@ -78,7 +79,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
       const res = await fetch("/api/account/delete", { method: "POST" });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Échec de la suppression");
+        toast.error(humanizeApiError(data.error));
         setDeleting(false);
         return;
       }
@@ -119,7 +120,7 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
       .eq("id", profile.id);
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Profil mis à jour");
