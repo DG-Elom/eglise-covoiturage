@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 
 import { confirmToast } from "@/lib/confirm";
+import { humanizeApiError } from "@/lib/errors";
 import { PassagerTracking } from "@/components/passager-tracking";
 import { ReportButton } from "@/components/report-button";
 import { RateTripModal } from "@/components/rate-trip-modal";
@@ -169,7 +170,7 @@ function ReservationCard({
       .eq("id", reservation.id);
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Demande annulée");

@@ -18,6 +18,7 @@ import type { ConducteurRating } from "./page";
 import type { TrajetAlternative } from "@/lib/capacity";
 import { PlacesRestantesLive } from "@/components/places-restantes-live";
 import { formatDetour } from "@/lib/detour";
+import { humanizeApiError } from "@/lib/errors";
 
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -111,7 +112,7 @@ export function RechercheForm({
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     // Filtre les detours aberrants (> 100 km = bug geocoding cote conducteur)
@@ -180,7 +181,7 @@ export function RechercheForm({
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(body.error ?? "Erreur");
+      toast.error(humanizeApiError(body.error));
       return;
     }
 
@@ -429,7 +430,7 @@ function PublierDemande({
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? "Échec de la publication");
+        toast.error(humanizeApiError(data.error));
         setPublishing(false);
         return;
       }
