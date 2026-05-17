@@ -113,6 +113,21 @@ export async function POST(req: Request) {
       );
     }
     // refused / cancelled / completed / no_show => on reset en pending
+    // IMPORTANT : le trigger BEFORE INSERT (check_instance_capacity) ne se
+    // declenche pas sur un UPDATE. Sans ce check explicite, une re-demande
+    // pourrait ramener une reservation en pending alors que l'instance est
+    // deja pleine d'autres reservations actives => conducteur recevrait des
+    // demandes en surnombre.
+    if (remaining !== null && remaining <= 0) {
+      return buildInstanceFullResponse(
+        supabase,
+        passager_lat,
+        passager_lng,
+        culte_id,
+        sens,
+        date,
+      );
+    }
     const { data: updated, error: updateErr } = await supabase
       .from("reservations")
       .update({
