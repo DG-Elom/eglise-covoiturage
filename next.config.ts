@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+// 'unsafe-eval' n'est requis que par le bundler en développement (HMR/Turbopack).
+// En production il élargit inutilement la surface XSS : on le retire.
+const isDev = process.env.NODE_ENV !== "production";
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDev ? ["'unsafe-eval'"] : []),
+  "https://accounts.google.com",
+  "https://apis.google.com",
+].join(" ");
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -20,7 +31,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
               "img-src 'self' data: blob: https://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://lh3.googleusercontent.com",
               "font-src 'self'",

@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createRateLimiter } from "@/lib/rate-limit";
+
+// Route configurée sur gemini-3.1-pro-preview par défaut (modèle coûteux) :
+// garde-fou strict 5 req/min/user contre l'abus de coût.
+const checkRateLimit = createRateLimiter({ max: 5, windowMs: 60_000 });
 
 type CulteInput = {
   id: string;
@@ -155,6 +160,10 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;

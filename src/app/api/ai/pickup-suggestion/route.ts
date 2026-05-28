@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
+import { createRateLimiter } from "@/lib/rate-limit";
 import { parseGeoPoint, buildPickupPrompt, type PassagerInfo } from "./_logic";
 
 export const runtime = "nodejs";
+
+// Garde-fou coût Gemini : 5 req/min/user.
+const checkRateLimit = createRateLimiter({ max: 5, windowMs: 60_000 });
 
 interface PickupSuggestion {
   label: string;
@@ -37,6 +41,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessaie dans une minute." },
+      { status: 429 },
+    );
   }
 
   let body: unknown;
