@@ -277,7 +277,11 @@ create policy "conducteur voit résa de ses trajets" on reservations for select 
   )
 );
 create policy "passager crée résa" on reservations for insert with check (passager_id = auth.uid());
-create policy "passager update résa" on reservations for update using (passager_id = auth.uid());
+-- WITH CHECK : un passager ne peut écrire que 'pending' (re-demande) ou 'cancelled'
+-- (annulation). Empêche l'auto-acceptation (statut 'accepted'). Cf. migration_v39.
+create policy "passager update résa" on reservations for update
+  using (passager_id = auth.uid())
+  with check (passager_id = auth.uid() and statut in ('pending', 'cancelled'));
 create policy "conducteur traite résa" on reservations for update using (
   exists (
     select 1 from trajets_instances ti
