@@ -282,24 +282,44 @@ create policy "passager crée résa" on reservations for insert with check (pass
 create policy "passager update résa" on reservations for update
   using (passager_id = auth.uid())
   with check (passager_id = auth.uid() and statut in ('pending', 'cancelled'));
--- WITH CHECK : restreint les statuts inscriptibles aux transitions légitimes conducteur.
--- Cf. migration_v40.
-create policy "conducteur traite résa" on reservations for update
-  using (
-    exists (
-      select 1 from trajets_instances ti
-      join trajets t on t.id = ti.trajet_id
-      where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
-    )
+create policy "conducteur traite résa" on reservations for update using (
+  exists (
+    select 1 from trajets_instances ti
+    join trajets t on t.id = ti.trajet_id
+    where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
   )
-  with check (
-    statut in ('accepted', 'refused', 'cancelled', 'pending', 'completed', 'no_show')
-    and exists (
-      select 1 from trajets_instances ti
-      join trajets t on t.id = ti.trajet_id
-      where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
-    )
-  );
+);
+
+-- Garde des transitions de statut (cf. migration_v41) : la RLS WITH CHECK ne voit
+-- pas OLD, donc un trigger est nécessaire pour interdire les sorties d'un état
+-- terminal (completed/no_show) côté utilisateur. service_role + admin exemptés.
+create or replace function guard_reservation_statut_transition()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+  if coalesce(is_admin(), false) then
+    return new;
+  end if;
+  if old.statut in ('completed', 'no_show')
+     and new.statut is distinct from old.statut then
+    raise exception 'transition interdite depuis un etat terminal (%)', old.statut
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_statut_transition on reservations;
+create trigger trg_guard_statut_transition
+  before update of statut on reservations
+  for each row
+  execute function guard_reservation_statut_transition();
 
 -- messages
 create policy "lecture msg perso" on messages for select
