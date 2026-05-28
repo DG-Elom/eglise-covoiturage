@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { pickTopAlternatives, type TrajetAlternative } from "@/lib/capacity";
+import { pickTopAlternatives, isInstanceFullError, type TrajetAlternative } from "@/lib/capacity";
 import type { Database } from "@/lib/supabase/types";
 
 type Body = {
@@ -144,6 +144,16 @@ export async function POST(req: Request) {
       .single();
 
     if (updateErr) {
+      if (isInstanceFullError(updateErr)) {
+        return buildInstanceFullResponse(
+          supabase,
+          passager_lat,
+          passager_lng,
+          culte_id,
+          sens,
+          date,
+        );
+      }
       console.error("[reservations] re-request UPDATE failed:", {
         existing_id: existing.id,
         previous_statut: existing.statut,
@@ -174,7 +184,7 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    if (error.message?.includes("instance_full")) {
+    if (isInstanceFullError(error)) {
       return buildInstanceFullResponse(
         supabase,
         passager_lat,
