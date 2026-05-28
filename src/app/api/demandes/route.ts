@@ -84,7 +84,7 @@ async function notifyConducteurs(demandeId: string) {
   const { data: demande } = await admin
     .from("demandes_passager")
     .select(
-      `id, date, sens, pickup_adresse,
+      `id, culte_id, date, sens, pickup_adresse,
        culte:cultes (libelle, heure),
        passager:profiles!demandes_passager_passager_id_fkey (prenom, nom)`,
     )
@@ -92,17 +92,52 @@ async function notifyConducteurs(demandeId: string) {
     .single();
   if (!demande) return;
 
-  const { data: conducteurs } = await admin
-    .from("profiles")
-    .select("id")
-    .in("role", ["conducteur", "les_deux"]);
-  if (!conducteurs || conducteurs.length === 0) return;
-
   const culte = Array.isArray(demande.culte) ? demande.culte[0] : demande.culte;
   const passager = Array.isArray(demande.passager)
     ? demande.passager[0]
     : demande.passager;
   if (!culte || !passager) return;
+
+  // Ne notifier que les conducteurs avec un trajet actif non plein pour ce culte+date+sens.
+  // Limite connue : pas de filtrage géographique (rayon_detour_km non vérifié ici).
+  const { filterConducteursByTrajetActif } = await import("./_notify-logic");
+  const { data: trajetsActifs } = await admin
+    .from("trajets_instances")
+    .select(
+      `trajets!inner ( conducteur_id, culte_id, actif, sens, places_total ),
+       reservations ( statut )`,
+    )
+    .eq("date", demande.date)
+    .eq("trajets.culte_id", demande.culte_id)
+    .eq("trajets.actif", true)
+    .in("trajets.sens", [demande.sens, "aller_retour"]);
+
+  type TrajetInstanceRow = {
+    trajets: {
+      conducteur_id: string;
+      culte_id: string;
+      actif: boolean;
+      sens: string;
+      places_total: number;
+    };
+    reservations: Array<{ statut: string }>;
+  };
+
+  const trajetsAvecPlaces = ((trajetsActifs ?? []) as unknown as TrajetInstanceRow[]).map(
+    (ti) => {
+      const occupees = ti.reservations.filter(
+        (r) => r.statut === "accepted" || r.statut === "pending",
+      ).length;
+      return {
+        conducteur_id: ti.trajets.conducteur_id,
+        culte_id: ti.trajets.culte_id,
+        places_restantes: Math.max(0, ti.trajets.places_total - occupees),
+      };
+    },
+  );
+
+  const conducteurIds = filterConducteursByTrajetActif(trajetsAvecPlaces, demande.culte_id);
+  if (conducteurIds.length === 0) return;
 
   const dateFr = new Date(`${demande.date}T12:00:00`).toLocaleDateString(
     "fr-FR",
@@ -111,8 +146,6 @@ async function notifyConducteurs(demandeId: string) {
   const sens = demande.sens === "aller" ? "aller" : "retour";
   const title = `Nouvelle demande de trajet`;
   const body = `${passager.prenom} cherche un ${sens} pour ${culte.libelle} (${dateFr}) depuis ${demande.pickup_adresse}.`;
-
-  const conducteurIds = conducteurs.map((c) => c.id);
 
   const { sendPushTo } = await import("@/lib/push");
   await Promise.all(

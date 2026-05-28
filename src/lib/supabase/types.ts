@@ -275,7 +275,24 @@ export type Database = {
             | "completed"
             | "no_show";
         };
-        Update: Partial<Database["public"]["Tables"]["reservations"]["Insert"]>;
+        Update: Partial<{
+          passager_id: string;
+          trajet_instance_id: string;
+          sens: "aller" | "retour";
+          pickup_adresse: string;
+          pickup_position: string;
+          statut:
+            | "pending"
+            | "accepted"
+            | "refused"
+            | "cancelled"
+            | "completed"
+            | "no_show";
+          motif_refus: string | null;
+          demande_le: string;
+          traitee_le: string | null;
+          cancelled_le: string | null;
+        }>;
         Relationships: [];
       };
       track_positions: {

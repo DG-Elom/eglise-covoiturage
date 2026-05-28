@@ -282,13 +282,24 @@ create policy "passager crée résa" on reservations for insert with check (pass
 create policy "passager update résa" on reservations for update
   using (passager_id = auth.uid())
   with check (passager_id = auth.uid() and statut in ('pending', 'cancelled'));
-create policy "conducteur traite résa" on reservations for update using (
-  exists (
-    select 1 from trajets_instances ti
-    join trajets t on t.id = ti.trajet_id
-    where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
+-- WITH CHECK : restreint les statuts inscriptibles aux transitions légitimes conducteur.
+-- Cf. migration_v40.
+create policy "conducteur traite résa" on reservations for update
+  using (
+    exists (
+      select 1 from trajets_instances ti
+      join trajets t on t.id = ti.trajet_id
+      where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
+    )
   )
-);
+  with check (
+    statut in ('accepted', 'refused', 'cancelled', 'pending', 'completed', 'no_show')
+    and exists (
+      select 1 from trajets_instances ti
+      join trajets t on t.id = ti.trajet_id
+      where ti.id = reservations.trajet_instance_id and t.conducteur_id = auth.uid()
+    )
+  );
 
 -- messages
 create policy "lecture msg perso" on messages for select
