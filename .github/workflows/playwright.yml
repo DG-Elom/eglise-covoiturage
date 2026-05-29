@@ -1,18 +1,13 @@
-# Playwright E2E — cible EXCLUSIVEMENT localhost:3201
+# Playwright E2E — cible EXCLUSIVEMENT Supabase LOCAL (jamais la prod).
 #
-# JAMAIS la prod (https://app.icc-covoit.fr).
-# La config webServer de playwright.config.ts démarre l'app localement
-# (port 3201) quand PLAYWRIGHT_BASE_URL commence par http://localhost.
+# Pipeline :
+#   1. Lance Supabase local (Docker-in-Docker via supabase-actions/setup-cli)
+#   2. Applique migrations + seed (`supabase db reset`)
+#   3. Build l'app Next.js en pointant sur le local
+#   4. Lance les tests Playwright contre localhost:3201
 #
-# Prérequis secrets GitHub (repository secrets) pour que le build Next.js
-# fonctionne en CI :
-#   - NEXT_PUBLIC_SUPABASE_URL
-#   - NEXT_PUBLIC_SUPABASE_ANON_KEY
-#
-# Sans ces secrets, les steps build/e2e sont skippés via la condition
-# `steps.check_secrets.outputs.skip` : le job reste vert à vide (pas de
-# blocage de PR), MAIS si les secrets sont présents et qu'un test échoue,
-# le job échoue et bloque le merge. On ne tape jamais la prod.
+# Le job Vitest reste intact dans vitest.yml.
+# Aucun secret cloud requis pour ce job.
 
 name: Playwright E2E
 
@@ -23,14 +18,19 @@ on:
 
 jobs:
   e2e:
-    name: Playwright E2E (chromium — localhost)
+    name: Playwright E2E (chromium — Supabase local)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
-      # Pointe toujours sur localhost (port aligné sur playwright.config.ts) — jamais sur la prod.
+      # L'app pointe sur le Supabase local — jamais la prod.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       PLAYWRIGHT_BASE_URL: http://localhost:3201
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      # Mapbox : le test e2e mocke api.mapbox.com via page.route() — aucun token
+      # réel requis. On passe une valeur factice pour que le code client ne
+      # court-circuite pas les appels (geocodeAddress retourne [] si token vide).
+      NEXT_PUBLIC_MAPBOX_TOKEN: pk.e2e_mock_token_not_used
 
     steps:
       - name: Checkout
@@ -45,31 +45,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Le build échoue sans les secrets Supabase → le job est skippé proprement.
-      - name: Check required secrets
-        id: check_secrets
-        run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Secrets Supabase manquants — tests e2e skippés. Configurer NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans les secrets du dépôt."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Setup Supabase CLI
+        # Version épinglée = version locale vérifiée (`supabase --version` → 2.95.4).
+        # Cette version embarque Mailpit sur le port 54324 utilisé par le test e2e.
+        # Ne pas passer à `latest` sans valider que Mailpit reste disponible sur ce port.
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.95.4
+
+      - name: Start Supabase local
+        run: supabase start
+
+      - name: Apply migrations + seed
+        run: supabase db reset
 
       - name: Build Next.js app
-        if: steps.check_secrets.outputs.skip == 'false'
         run: npm run build
+        env:
+          # Ces vars sont nécessaires au build Next.js pour les NEXT_PUBLIC_* inlinés
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+          # Même valeur factice que le job-level : le build inlne la var NEXT_PUBLIC_*
+          # mais l'appel réseau sera intercepté par le mock Playwright au runtime.
+          NEXT_PUBLIC_MAPBOX_TOKEN: pk.e2e_mock_token_not_used
 
       - name: Install Playwright browsers
-        if: steps.check_secrets.outputs.skip == 'false'
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
-        if: steps.check_secrets.outputs.skip == 'false'
         run: npm run test:e2e
+        env:
+          # Surcharge pour s'assurer que le webServer.env de playwright.config.ts
+          # prend les bonnes valeurs (les vars de job-level sont héritées ici)
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
 
       - name: Upload Playwright report
-        if: failure() && steps.check_secrets.outputs.skip == 'false'
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
