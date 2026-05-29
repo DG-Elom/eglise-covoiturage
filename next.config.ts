@@ -11,6 +11,15 @@ const scriptSrc = [
   "https://apis.google.com",
 ].join(" ");
 
+// En dev/test, autorise le Supabase local (127.0.0.1:54321).
+// La valeur provient de la variable d'env pour éviter de hardcoder en prod.
+const supabaseLocalOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("http://127.0.0.1")
+  ? process.env.NEXT_PUBLIC_SUPABASE_URL
+  : null;
+const extraConnectSrc = supabaseLocalOrigin
+  ? `${supabaseLocalOrigin} ${supabaseLocalOrigin.replace("http://", "ws://")}`
+  : "";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -35,7 +44,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://api.mapbox.com",
               "img-src 'self' data: blob: https://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://lh3.googleusercontent.com",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://events.mapbox.com https://accounts.google.com",
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://*.mapbox.com https://events.mapbox.com https://accounts.google.com${extraConnectSrc ? " " + extraConnectSrc : ""}`,
               "frame-src https://accounts.google.com",
               "frame-ancestors 'none'",
               // mapbox-gl decode les vector tiles dans un Web Worker cree via blob:.
