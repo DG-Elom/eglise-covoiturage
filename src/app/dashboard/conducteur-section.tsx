@@ -464,15 +464,14 @@ function ReservationRow({
       return;
     }
 
-    // Refus : update direct Supabase
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("reservations")
-      .update({ statut, traitee_le: new Date().toISOString() } as never)
-      .eq("id", reservation.id);
+    // Refus : route dédiée (symétrique avec l'acceptation)
+    const res = await fetch(`/api/reservations/${reservation.id}/refuse`, {
+      method: "POST",
+    });
     setLoading(null);
-    if (error) {
-      toast.error(humanizeApiError(error));
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(body.error ?? "Erreur");
       return;
     }
     void notify("reservation_refused", reservation.id);
@@ -487,14 +486,13 @@ function ReservationRow({
     );
     if (!ok) return;
     setLoading("revert");
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("reservations")
-      .update({ statut: "pending", traitee_le: null } as never)
-      .eq("id", reservation.id);
+    const res = await fetch(`/api/reservations/${reservation.id}/revert`, {
+      method: "POST",
+    });
     setLoading(null);
-    if (error) {
-      toast.error(humanizeApiError(error));
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(body.error ?? "Erreur");
       return;
     }
     toast.success("Remise en attente");

@@ -85,19 +85,34 @@ export default async function DashboardPage() {
       .eq("rater_id", user.id);
     alreadyRatedIdsAsConduct = (myRatings ?? []).map((r) => r.reservation_id);
 
-    const { data: ratingsData } = await supabase
-      .from("trip_ratings")
-      .select("rated_id, stars");
-    if (ratingsData && ratingsData.length > 0) {
-      const grouped = new Map<string, number[]>();
-      for (const row of ratingsData) {
-        const arr = grouped.get(row.rated_id) ?? [];
-        arr.push(row.stars);
-        grouped.set(row.rated_id, arr);
+    // Dérive la liste des passagers de ce conducteur pour filtrer les notes
+    const passagerIdsSet = new Set<string>();
+    for (const trajet of mesTrajets) {
+      for (const instance of trajet.trajets_instances ?? []) {
+        for (const resa of instance.reservations ?? []) {
+          const pid = resa.passager?.id;
+          if (pid) passagerIdsSet.add(pid);
+        }
       }
-      for (const [userId, stars] of grouped.entries()) {
-        const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
-        passagerRatings.set(userId, { avg, count: stars.length });
+    }
+    const passagerIds = Array.from(passagerIdsSet);
+
+    if (passagerIds.length > 0) {
+      const { data: ratingsData } = await supabase
+        .from("trip_ratings")
+        .select("rated_id, stars")
+        .in("rated_id", passagerIds);
+      if (ratingsData && ratingsData.length > 0) {
+        const grouped = new Map<string, number[]>();
+        for (const row of ratingsData) {
+          const arr = grouped.get(row.rated_id) ?? [];
+          arr.push(row.stars);
+          grouped.set(row.rated_id, arr);
+        }
+        for (const [userId, stars] of grouped.entries()) {
+          const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
+          passagerRatings.set(userId, { avg, count: stars.length });
+        }
       }
     }
   }

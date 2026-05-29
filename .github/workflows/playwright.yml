@@ -1,4 +1,20 @@
-name: Playwright
+# Playwright E2E — cible EXCLUSIVEMENT localhost:3201
+#
+# JAMAIS la prod (https://app.icc-covoit.fr).
+# La config webServer de playwright.config.ts démarre l'app localement
+# (port 3201) quand PLAYWRIGHT_BASE_URL commence par http://localhost.
+#
+# Prérequis secrets GitHub (repository secrets) pour que le build Next.js
+# fonctionne en CI :
+#   - NEXT_PUBLIC_SUPABASE_URL
+#   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+#
+# Sans ces secrets, les steps build/e2e sont skippés via la condition
+# `steps.check_secrets.outputs.skip` : le job reste vert à vide (pas de
+# blocage de PR), MAIS si les secrets sont présents et qu'un test échoue,
+# le job échoue et bloque le merge. On ne tape jamais la prod.
+
+name: Playwright E2E
 
 on:
   pull_request:
@@ -7,11 +23,15 @@ on:
 
 jobs:
   e2e:
-    name: Playwright E2E (chromium)
+    name: Playwright E2E (chromium — localhost)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL || 'https://app.icc-covoit.fr' }}
+      # Pointe toujours sur localhost (port aligné sur playwright.config.ts) — jamais sur la prod.
+      PLAYWRIGHT_BASE_URL: http://localhost:3201
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,14 +45,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Le build échoue sans les secrets Supabase → le job est skippé proprement.
+      - name: Check required secrets
+        id: check_secrets
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Secrets Supabase manquants — tests e2e skippés. Configurer NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans les secrets du dépôt."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Next.js app
+        if: steps.check_secrets.outputs.skip == 'false'
+        run: npm run build
+
       - name: Install Playwright browsers
+        if: steps.check_secrets.outputs.skip == 'false'
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
+        if: steps.check_secrets.outputs.skip == 'false'
         run: npm run test:e2e
 
       - name: Upload Playwright report
-        if: failure()
+        if: failure() && steps.check_secrets.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report

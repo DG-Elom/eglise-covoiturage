@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
+import { createRateLimiter } from "@/lib/rate-limit";
 import { validateImproveTextInput, buildImproveTextPrompt, type ImproveTextContext } from "./_logic";
 
 export const runtime = "nodejs";
@@ -10,22 +11,7 @@ const SYSTEM_PROMPT =
   "Garde un ton chaleureux, simple, et bref. Préserve le sens. " +
   "Réponds UNIQUEMENT avec le texte reformulé, sans préambule.";
 
-// Rate limit léger : Map<userId, { count, resetAt }>
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
+const checkRateLimit = createRateLimiter({ max: 3, windowMs: 60_000 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const supabase = await createClient();

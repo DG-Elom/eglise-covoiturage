@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { pickTopAlternatives, type TrajetAlternative } from "@/lib/capacity";
+import { pickTopAlternatives, isInstanceFullError, type TrajetAlternative } from "@/lib/capacity";
 import type { Database } from "@/lib/supabase/types";
 
 type Body = {
@@ -112,7 +112,19 @@ export async function POST(req: Request) {
         { status: 409 },
       );
     }
-    // refused / cancelled / completed / no_show => on reset en pending
+    // completed / no_show = course terminée : pas de re-demande possible.
+    // (Cohérent avec le trigger v41 qui interdit toute sortie d'un état terminal.)
+    if (existing.statut === "completed" || existing.statut === "no_show") {
+      return NextResponse.json(
+        {
+          error: "course_terminee",
+          message: "Cette course est déjà terminée, elle ne peut pas être redemandée.",
+          id: existing.id,
+        },
+        { status: 409 },
+      );
+    }
+    // refused / cancelled => on reset en pending
     // IMPORTANT : le trigger BEFORE INSERT (check_instance_capacity) ne se
     // declenche pas sur un UPDATE. Sans ce check explicite, une re-demande
     // pourrait ramener une reservation en pending alors que l'instance est
@@ -144,6 +156,16 @@ export async function POST(req: Request) {
       .single();
 
     if (updateErr) {
+      if (isInstanceFullError(updateErr)) {
+        return buildInstanceFullResponse(
+          supabase,
+          passager_lat,
+          passager_lng,
+          culte_id,
+          sens,
+          date,
+        );
+      }
       console.error("[reservations] re-request UPDATE failed:", {
         existing_id: existing.id,
         previous_statut: existing.statut,
@@ -174,7 +196,7 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    if (error.message?.includes("instance_full")) {
+    if (isInstanceFullError(error)) {
       return buildInstanceFullResponse(
         supabase,
         passager_lat,
