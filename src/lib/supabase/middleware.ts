@@ -49,6 +49,7 @@ export async function updateSession(request: NextRequest) {
     target.pathname.startsWith("/track/") ||
     target.pathname.startsWith("/api/track/position/") ||
     target.pathname.startsWith("/api/internal/") ||
+    target.pathname.startsWith("/api/cron/") ||
     target.pathname.startsWith("/u/");
 
   if (!user && !isPublicRoute) {
