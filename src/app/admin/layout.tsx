@@ -4,7 +4,7 @@ import {
   BarChart3,
   Calendar,
   Car,
-  Flame,
+  Map,
   Megaphone,
   ShieldCheck,
   Users,
@@ -27,7 +27,7 @@ const NAV_ITEMS: Array<{ href: string; label: string; icon: typeof BarChart3 }> 
   { href: "/admin/bugs", label: "Bugs", icon: Bug },
   { href: "/admin/eglise", label: "Église", icon: Building2 },
   { href: "/admin/broadcast-sms", label: "SMS groupe", icon: Sparkles },
-  { href: "/admin/heatmap", label: "Heatmap", icon: Flame },
+  { href: "/admin/carte", label: "Carte offre/demande", icon: Map },
 ];
 
 export default async function AdminLayout({
