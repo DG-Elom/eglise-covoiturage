@@ -1,16 +1,15 @@
-export interface WeeklyRawData {
-  trajetsEffectues: number;
-  passagersTransportes: number;
-  nouveauxInscrits: number;
-  messagesEchanges: number;
-  kmCumules: number;
-}
+/**
+ * Compat : la logique d'impact vit désormais dans `@/lib/impact` (partagée avec
+ * la carte d'impact `/impact`). Ce module ré-exporte sous les anciens noms pour
+ * ne rien casser.
+ */
+import {
+  computeImpactStats,
+  type ImpactRawData,
+  type ImpactStats,
+} from "@/lib/impact";
 
-export interface WeeklyStats extends WeeklyRawData {
-  co2EconomiseKg: number;
-}
+export type WeeklyRawData = ImpactRawData;
+export type WeeklyStats = ImpactStats;
 
-export function computeWeeklyStats(raw: WeeklyRawData): WeeklyStats {
-  const co2 = Math.round(raw.kmCumules * 0.12 * raw.passagersTransportes * 100) / 100;
-  return { ...raw, co2EconomiseKg: co2 };
-}
+export const computeWeeklyStats = computeImpactStats;
