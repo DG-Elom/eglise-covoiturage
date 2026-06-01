@@ -15,6 +15,7 @@ import { MesAbonnements } from "@/components/mes-abonnements";
 import { geocodeAddress } from "@/lib/mapbox";
 import { humanizeApiError } from "@/lib/errors";
 import { UserBadges } from "@/components/user-badges";
+import { InviteFriend } from "@/components/invite-friend";
 import type { Database } from "@/lib/supabase/types";
 
 type SavedPlace = Database["public"]["Tables"]["saved_places"]["Row"];
@@ -275,6 +276,8 @@ export function ProfilForm({ profile, email }: { profile: Profile; email: string
         </h2>
         <UserBadges userId={profile.id} />
       </div>
+
+      <InviteFriend prenom={profile.prenom} />
 
       <div className="rounded-xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
         <h2 className="text-sm font-semibold text-red-900 dark:text-red-200">
