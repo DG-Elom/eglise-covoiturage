@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Sparkles,
+  Trophy,
   User,
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
@@ -148,6 +149,9 @@ function UserMenu({ user, isAdmin }: { user: HeaderUser; isAdmin: boolean }) {
             </MenuLink>
             <MenuLink href="/calendrier" icon={<Calendar className="size-4" />}>
               Calendrier
+            </MenuLink>
+            <MenuLink href="/classement" icon={<Trophy className="size-4" />}>
+              Classement
             </MenuLink>
             <MenuLink href="/welcome" icon={<Sparkles className="size-4" />}>
               Découvrir l&apos;app
