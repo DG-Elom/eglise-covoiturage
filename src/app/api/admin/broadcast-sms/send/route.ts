@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { sendSmsTo } from "@/lib/sms/send";
+import { personalize } from "@/lib/sms/personalize";
 import {
   resolveRecipients,
   targetLabelFor,
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       sendSmsTo({
         userId: r.id,
         kind: "admin_broadcast",
-        body: message,
+        body: personalize(message, r.prenom),
         dedupKey: `admin_broadcast:${campaignId}:${r.id}`,
       }).catch((e) => ({ error: e instanceof Error ? e.message : String(e) })),
     ),
