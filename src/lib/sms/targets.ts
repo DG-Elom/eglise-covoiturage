@@ -7,7 +7,8 @@ export type TargetFilter =
   | { type: "passengers_inactive" }
   | { type: "all_members" }
   | { type: "by_culte"; culte_id: string }
-  | { type: "single"; user_id: string };
+  | { type: "single"; user_id: string }
+  | { type: "explicit"; user_ids: string[] };
 
 export type Recipient = {
   id: string;
@@ -22,6 +23,7 @@ export const TARGET_LABELS: Record<TargetFilter["type"], string> = {
   all_members: "Tous les membres inscrits",
   by_culte: "Membres ayant reserve sur ce culte",
   single: "Destinataire individuel",
+  explicit: "Selection personnalisee",
 };
 
 function svc() {
@@ -101,6 +103,15 @@ export async function resolveRecipients(
     case "single": {
       const p = phoneMap.get(filter.user_id);
       ids = p ? [p.id] : [];
+      break;
+    }
+
+    case "explicit": {
+      // Sélection libre de l'admin : on ne garde que les profils actifs
+      // (non suspendus, charte acceptée) ; le filtrage "a un téléphone" se
+      // fait plus bas comme pour les autres cibles. Dédoublonnage par Set.
+      const wanted = new Set(filter.user_ids);
+      ids = profiles.filter((p) => wanted.has(p.id)).map((p) => p.id);
       break;
     }
 
