@@ -12,6 +12,7 @@ import {
   Navigation,
   Trash2,
   CalendarX,
+  CalendarPlus,
   Pencil,
   MessageCircle,
   MessageSquareText,
@@ -38,6 +39,15 @@ import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import { SendThanksModal } from "@/components/send-thanks-modal";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+const JOURS_LONGS = [
+  "dimanche",
+  "lundi",
+  "mardi",
+  "mercredi",
+  "jeudi",
+  "vendredi",
+  "samedi",
+];
 const SENS_LABEL: Record<string, string> = {
   aller: "Aller",
   retour: "Retour",
@@ -122,6 +132,7 @@ function TrajetCard({
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [repeating, setRepeating] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
   const instances = [...trajet.trajets_instances]
     .filter((i) => !i.annule_par_conducteur)
@@ -131,6 +142,11 @@ function TrajetCard({
         i.reservations.some((r) => r.statut === "accepted" || r.statut === "completed"),
     )
     .sort((a, b) => a.date.localeCompare(b.date));
+  // Combien de dates futures réellement programmées (non annulées) ? Sert à
+  // décider d'afficher le nudge « reproduire ». Le cron generer_trajets_instances
+  // matérialise normalement 30 j, mais peut ne pas avoir tourné, ou des dates
+  // peuvent avoir été annulées.
+  const futureInstancesCount = instances.filter((i) => i.date >= today).length;
 
   async function deleteTrajet() {
     const ok = await confirmToast(
@@ -183,6 +199,33 @@ function TrajetCard({
     router.refresh();
   }
 
+  async function repeatNextWeeks() {
+    setRepeating(true);
+    const res = await fetch(`/api/trajets/${trajet.id}/repeat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weeks: 4 }),
+    });
+    setRepeating(false);
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(body.error ?? "Erreur");
+      return;
+    }
+    const body = (await res.json().catch(() => ({}))) as { created?: number };
+    const created = body.created ?? 0;
+    if (created === 0) {
+      toast.message("Les 4 prochaines semaines sont déjà programmées.");
+    } else {
+      toast.success(
+        `${created} date${created > 1 ? "s" : ""} ajoutée${created > 1 ? "s" : ""} !`,
+      );
+    }
+    router.refresh();
+  }
+
+  const jourLabel = trajet.cultes ? JOURS_LONGS[trajet.cultes.jour_semaine] : null;
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
@@ -206,6 +249,15 @@ function TrajetCard({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={repeatNextWeeks}
+            disabled={repeating}
+            title="Reproduire les 4 prochaines semaines"
+            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 transition dark:text-slate-500 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
+          >
+            <CalendarPlus className="size-4" />
+          </button>
           <Link
             href={`/trajets/${trajet.id}/edit`}
             title="Modifier ce trajet"
@@ -240,6 +292,24 @@ function TrajetCard({
         ))}
         {instances.length === 0 && (
           <p className="px-4 py-3 text-sm text-slate-500">Aucune date à venir.</p>
+        )}
+        {futureInstancesCount < 4 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50/60 px-4 py-3 dark:bg-emerald-950/20">
+            <p className="text-xs text-emerald-900 dark:text-emerald-200">
+              {jourLabel
+                ? `Tu fais ça chaque ${jourLabel} ? Programme les 4 prochaines semaines en un clic.`
+                : "Programme les 4 prochaines semaines en un clic."}
+            </p>
+            <button
+              type="button"
+              onClick={repeatNextWeeks}
+              disabled={repeating}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+            >
+              <CalendarPlus className="size-3.5" />
+              {repeating ? "..." : "Reproduire 4 semaines"}
+            </button>
+          </div>
         )}
       </div>
     </div>
