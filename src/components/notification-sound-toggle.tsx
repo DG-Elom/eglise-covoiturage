@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Bell, BellOff } from "lucide-react";
+import { Toggle } from "@/components/toggle";
 import { isSoundEnabled, playNotifSound, setSoundEnabled, STORAGE_KEY } from "@/lib/notification-sound";
 
 const subscribe = (cb: () => void) => {
@@ -40,21 +41,7 @@ export function NotificationSoundToggle() {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          onClick={toggle}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-            enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-              enabled ? "translate-x-5" : "translate-x-0.5"
-            }`}
-          />
-        </button>
+        <Toggle checked={enabled} onChange={toggle} aria-label="Sons de notification" />
       </div>
     </div>
   );

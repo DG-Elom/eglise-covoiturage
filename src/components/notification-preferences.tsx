@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { Toggle } from "@/components/toggle";
 import type { NotifPrefs } from "@/lib/notification-preferences";
 
 type AllPrefs = NotifPrefs & { sms_enabled: boolean };
@@ -136,22 +137,14 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
                       </span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={enabled}
-                    disabled={isSaving}
-                    onClick={() => void toggle(kind)}
-                    className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                      enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        enabled ? "translate-x-5" : "translate-x-0.5"
-                      }`}
+                  <div className="mt-0.5">
+                    <Toggle
+                      checked={enabled}
+                      disabled={isSaving}
+                      onChange={() => void toggle(kind)}
+                      aria-label={label}
                     />
-                  </button>
+                  </div>
                 </li>
               );
             })}
@@ -175,22 +168,14 @@ export function NotificationPreferences({ userId, isAdmin }: Props) {
                 Demande acceptée + rappel 2h avant le trajet. Un canal de secours quand le push ne passe pas (iPhone notamment).
               </span>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={smsEnabled}
-              disabled={smsSaving}
-              onClick={() => void toggle("sms_enabled")}
-              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                smsEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  smsEnabled ? "translate-x-5" : "translate-x-0.5"
-                }`}
+            <div className="mt-0.5">
+              <Toggle
+                checked={smsEnabled}
+                disabled={smsSaving}
+                onChange={() => void toggle("sms_enabled")}
+                aria-label="Recevoir des SMS pour les events critiques"
               />
-            </button>
+            </div>
           </div>
         )}
       </div>
