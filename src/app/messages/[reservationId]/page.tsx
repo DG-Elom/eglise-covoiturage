@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
 import { Avatar } from "@/components/avatar";
+import { ProfileLink } from "@/components/profile-link";
 import { Calendar } from "lucide-react";
 import { ChatView, type ChatMessage } from "./chat-view";
 
@@ -132,21 +133,27 @@ export default async function MessagesPage({ params }: Props) {
       />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-4 sm:px-6">
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-          <Avatar
-            photoUrl={otherProfile.photo_url}
-            prenom={otherProfile.prenom}
-            nom={otherProfile.nom}
-            size="md"
-          />
-          <div className="min-w-0">
-            <p className="font-medium">
-              {otherProfile.prenom} {otherProfile.nom}
-            </p>
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
-              <Calendar className="size-3" />
-              {culte?.libelle ?? "Trajet"} · {formatDate(r.trajets_instances.date)}
-            </p>
-          </div>
+          <ProfileLink
+            userId={otherProfile.id}
+            enabled={!!profile.is_admin}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <Avatar
+              photoUrl={otherProfile.photo_url}
+              prenom={otherProfile.prenom}
+              nom={otherProfile.nom}
+              size="md"
+            />
+            <div className="min-w-0">
+              <p className="font-medium">
+                {otherProfile.prenom} {otherProfile.nom}
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                <Calendar className="size-3" />
+                {culte?.libelle ?? "Trajet"} · {formatDate(r.trajets_instances.date)}
+              </p>
+            </div>
+          </ProfileLink>
         </div>
 
         <ChatView
