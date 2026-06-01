@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
-import { computeWeeklyStats, type WeeklyRawData } from "./_stats";
+import {
+  computeImpactStats,
+  KM_MOYEN_PAR_TRAJET,
+  type ImpactRawData,
+} from "@/lib/impact";
 
 export const runtime = "nodejs";
 
@@ -11,7 +15,7 @@ function sevenDaysAgo(): string {
   return d.toISOString();
 }
 
-function buildSummaryPrompt(stats: ReturnType<typeof computeWeeklyStats>): string {
+function buildSummaryPrompt(stats: ReturnType<typeof computeImpactStats>): string {
   return `Rédige un message court (~80 mots), chaleureux, pour la communauté ICC Metz, à partir des stats suivantes. Format adapté à WhatsApp (emojis modérés). Termine par une phrase d'encouragement biblique légère.
 
 Stats de la semaine :
@@ -69,11 +73,10 @@ export async function GET(): Promise<NextResponse> {
     .select("id", { count: "exact", head: true })
     .gte("envoye_le", since);
 
-  // Estimation km : trajets effectués × distance moyenne estimée (20 km)
-  const KM_MOYEN_PAR_TRAJET = 20;
+  // Estimation km : trajets effectués × distance moyenne estimée
   const kmCumules = (trajetsEffectues ?? 0) * KM_MOYEN_PAR_TRAJET;
 
-  const raw: WeeklyRawData = {
+  const raw: ImpactRawData = {
     trajetsEffectues: trajetsEffectues ?? 0,
     passagersTransportes: passagersTransportes ?? 0,
     nouveauxInscrits: nouveauxInscrits ?? 0,
@@ -81,7 +84,7 @@ export async function GET(): Promise<NextResponse> {
     kmCumules,
   };
 
-  const stats = computeWeeklyStats(raw);
+  const stats = computeImpactStats(raw);
   const prompt = buildSummaryPrompt(stats);
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
