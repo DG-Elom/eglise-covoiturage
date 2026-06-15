@@ -56,3 +56,4 @@ supabase/.branches/
 
 # scratchpad (communication inter-agents, non versionnée)
 scratchpad/
+.env*.local
