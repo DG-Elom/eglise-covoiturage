@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Power, Loader2, Save } from "lucide-react";
+import { Plus, Trash2, Power, Loader2, Save, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { confirmToast } from "@/lib/confirm";
@@ -411,6 +411,14 @@ function Row({ programme }: { programme: Programme }) {
         </div>
       </button>
       <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title="Modifier"
+          className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          <Pencil className="size-4" />
+        </button>
         <button
           type="button"
           onClick={toggleActif}
