@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { formatProgramme } from "@/lib/dates";
 import { sendEmail } from "@/lib/email/send";
 import {
   emailNouvelleReservation,
@@ -16,7 +17,6 @@ type NotifyKind =
   | "reservation_refused"
   | "trajet_date_cancelled";
 
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         trajets (
           conducteur_id,
           depart_adresse,
-          cultes (libelle, jour_semaine, heure),
+          cultes (libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure),
           conducteur:profiles!trajets_conducteur_id_fkey (
             prenom, nom, telephone, voiture_modele, voiture_couleur
           )
@@ -71,7 +71,14 @@ export async function POST(req: NextRequest) {
     trajets: {
       conducteur_id: string;
       depart_adresse: string;
-      cultes: { libelle: string; jour_semaine: number; heure: string } | null;
+      cultes: {
+        libelle: string;
+        jour_semaine: number | null;
+        jours_semaine: number[];
+        date_debut: string | null;
+        date_fin: string | null;
+        heure: string;
+      } | null;
       conducteur: {
         prenom: string;
         nom: string;
@@ -150,7 +157,12 @@ export async function POST(req: NextRequest) {
     conducteurTelephone: conducteur.telephone,
     voitureModele: conducteur.voiture_modele,
     voitureCouleur: conducteur.voiture_couleur,
-    programmeLibelle: `${culte.libelle} (${JOURS[culte.jour_semaine]})`,
+    programmeLibelle: `${culte.libelle} (${formatProgramme({
+      jours_semaine: culte.jours_semaine,
+      date_debut: culte.date_debut,
+      date_fin: culte.date_fin,
+      jour_semaine: culte.jour_semaine,
+    })})`,
     date: formatDate(inst.date),
     heure: culte.heure.slice(0, 5),
     sens: r.sens,

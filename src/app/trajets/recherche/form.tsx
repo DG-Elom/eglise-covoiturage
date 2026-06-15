@@ -11,7 +11,7 @@ import { Avatar } from "@/components/avatar";
 import { Map, type MapMarker } from "@/components/map";
 import type { GeocodeResult } from "@/lib/mapbox";
 import { geocodeAddress } from "@/lib/mapbox";
-import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
+import { nextOccurrences, nextOccurrencesMulti, occurrencesFromRange, formatDateShort, toDateString, formatProgramme } from "@/lib/dates";
 import { notify } from "@/lib/notify";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import type { ConducteurRating } from "./page";
@@ -21,9 +21,15 @@ import { formatDetour } from "@/lib/detour";
 import { humanizeApiError } from "@/lib/errors";
 
 
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
-
-type Culte = { id: string; libelle: string; jour_semaine: number; heure: string };
+type Culte = {
+  id: string;
+  libelle: string;
+  jour_semaine: number | null;
+  jours_semaine: number[];
+  date_debut: string | null;
+  date_fin: string | null;
+  heure: string;
+};
 type Sens = "aller" | "retour";
 
 type TrajetCompatible = {
@@ -68,7 +74,15 @@ export function RechercheForm({
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const culte = cultes.find((c) => c.id === culteId);
-  const dates = culte ? nextOccurrences(culte.jour_semaine, 4) : [];
+  const dates = culte
+    ? culte.date_debut && culte.date_fin
+      ? occurrencesFromRange(culte.date_debut, culte.date_fin).slice(0, 4)
+      : culte.jours_semaine.length > 0
+        ? nextOccurrencesMulti(culte.jours_semaine, 4)
+        : culte.jour_semaine != null
+          ? nextOccurrences(culte.jour_semaine, 4)
+          : []
+    : [];
 
   // Reset les resultats des qu'un critere de recherche change (oblige a relancer Rechercher)
   useEffect(() => {
@@ -256,7 +270,7 @@ export function RechercheForm({
                 />
                 <div className="font-medium">{c.libelle}</div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  {JOURS[c.jour_semaine]} · {c.heure.slice(0, 5)}
+                  {formatProgramme({ jours_semaine: c.jours_semaine, date_debut: c.date_debut, date_fin: c.date_fin, jour_semaine: c.jour_semaine })} · {c.heure.slice(0, 5)}
                 </div>
               </label>
             ))}

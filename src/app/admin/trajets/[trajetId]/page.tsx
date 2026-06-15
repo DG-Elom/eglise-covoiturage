@@ -4,8 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/avatar";
 import { computeAcceptanceRate, parseDetourRpcResult } from "@/lib/trajet-stats";
 import { formatDetourLong } from "@/lib/detour";
-
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+import { formatProgramme } from "@/lib/dates";
 
 const STATUT_CONFIG = {
   pending: { label: "En attente", color: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" },
@@ -58,7 +57,7 @@ export default async function TrajetDetailPage({
     .select(
       `id, depart_adresse, places_total, sens, heure_depart,
        conducteur:profiles!trajets_conducteur_id_fkey (id, prenom, nom, photo_url),
-       culte:cultes (id, libelle, jour_semaine, heure)`,
+       culte:cultes (id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure)`,
     )
     .eq("id", trajetId)
     .single();
@@ -223,7 +222,15 @@ export default async function TrajetDetailPage({
   const detourMoyenKm = parseDetourRpcResult(detourData);
 
   const conducteur = trajetRaw.conducteur as unknown as ProfileRow | null;
-  const culte = trajetRaw.culte as unknown as { id: string; libelle: string; jour_semaine: number; heure: string } | null;
+  const culte = trajetRaw.culte as unknown as {
+    id: string;
+    libelle: string;
+    jour_semaine: number | null;
+    jours_semaine: number[];
+    date_debut: string | null;
+    date_fin: string | null;
+    heure: string;
+  } | null;
 
   const SENS_LABEL: Record<string, string> = {
     aller: "Aller",
@@ -264,7 +271,12 @@ export default async function TrajetDetailPage({
             </p>
             {culte && (
               <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                {culte.libelle} · {JOURS[culte.jour_semaine]} à {culte.heure.slice(0, 5)}
+                {culte.libelle} · {formatProgramme({
+                  jours_semaine: culte.jours_semaine,
+                  date_debut: culte.date_debut,
+                  date_fin: culte.date_fin,
+                  jour_semaine: culte.jour_semaine,
+                })} à {culte.heure.slice(0, 5)}
                 {trajetRaw.heure_depart && ` · Départ ${trajetRaw.heure_depart.slice(0, 5)}`}
               </p>
             )}

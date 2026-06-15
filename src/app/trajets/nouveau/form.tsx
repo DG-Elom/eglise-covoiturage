@@ -14,7 +14,7 @@ import {
   type GeocodeResult,
   type RouteResult,
 } from "@/lib/mapbox";
-import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
+import { nextOccurrences, nextOccurrencesMulti, occurrencesFromRange, formatDateShort, toDateString, formatProgramme } from "@/lib/dates";
 
 type ParsedTrajet = {
   culte_id?: string | null;
@@ -26,12 +26,13 @@ type ParsedTrajet = {
   dates?: string[];
 };
 
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
-
 type Culte = {
   id: string;
   libelle: string;
-  jour_semaine: number;
+  jour_semaine: number | null;
+  jours_semaine: number[];
+  date_debut: string | null;
+  date_fin: string | null;
   heure: string;
 };
 
@@ -108,7 +109,19 @@ export function NouveauTrajetForm({
   }, [adresse, eglisePos]);
   const culte = cultes.find((c) => c.id === culteId);
   const dates = useMemo(
-    () => (culte ? nextOccurrences(culte.jour_semaine, recurrenceWeeks) : []),
+    () => {
+      if (!culte) return [];
+      if (culte.date_debut && culte.date_fin) {
+        return occurrencesFromRange(culte.date_debut, culte.date_fin);
+      }
+      if (culte.jours_semaine.length > 0) {
+        return nextOccurrencesMulti(culte.jours_semaine, recurrenceWeeks);
+      }
+      if (culte.jour_semaine != null) {
+        return nextOccurrences(culte.jour_semaine, recurrenceWeeks);
+      }
+      return [];
+    },
     [culte, recurrenceWeeks],
   );
   const todayStr = useMemo(() => toDateString(new Date()), []);
@@ -220,9 +233,14 @@ export function NouveauTrajetForm({
       if (parsed.dates && parsed.dates.length > 0) {
         const activeCulte = cultes.find((c) => c.id === activeCulteId);
         if (activeCulte) {
-          const slots = new Set(
-            nextOccurrences(activeCulte.jour_semaine, 4).map(toDateString),
-          );
+          const rawSlots = activeCulte.date_debut && activeCulte.date_fin
+            ? occurrencesFromRange(activeCulte.date_debut, activeCulte.date_fin)
+            : activeCulte.jours_semaine.length > 0
+              ? nextOccurrencesMulti(activeCulte.jours_semaine, 4)
+              : activeCulte.jour_semaine != null
+                ? nextOccurrences(activeCulte.jour_semaine, 4)
+                : [];
+          const slots = new Set(rawSlots.map(toDateString));
           const next = new Set(datesSelected);
           let added = 0;
           for (const d of parsed.dates) {
@@ -381,7 +399,7 @@ export function NouveauTrajetForm({
               />
               <div className="font-medium">{c.libelle}</div>
               <div className="text-xs text-slate-500 mt-0.5">
-                {JOURS[c.jour_semaine]} · {c.heure.slice(0, 5)}
+                {formatProgramme({ jours_semaine: c.jours_semaine, date_debut: c.date_debut, date_fin: c.date_fin, jour_semaine: c.jour_semaine })} · {c.heure.slice(0, 5)}
               </div>
             </label>
           ))}

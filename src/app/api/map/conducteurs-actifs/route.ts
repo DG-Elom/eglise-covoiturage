@@ -12,7 +12,7 @@ type TrajetRow = {
   culte: {
     libelle: string;
     heure: string;
-    jour_semaine: number;
+    jour_semaine: number | null;
   };
 };
 

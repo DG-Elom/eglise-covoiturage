@@ -17,7 +17,7 @@ const TARGET_OPTIONS: Array<{ value: TargetType; label: string }> = [
   { value: "drivers_inactive", label: "Conducteurs sans trajet actif" },
   { value: "passengers_inactive", label: "Passagers inactifs (>30j)" },
   { value: "all_members", label: "Tous les membres inscrits" },
-  { value: "by_culte", label: "Membres ayant reserve sur un culte" },
+  { value: "by_culte", label: "Membres ayant reserve sur un programme" },
 ];
 
 const TON_OPTIONS: Array<{ value: Ton; label: string }> = [
@@ -54,7 +54,7 @@ export function BroadcastSmsForm({
 
   async function handlePreview() {
     if (targetType === "by_culte" && !culteId) {
-      toast.error("Choisis un culte");
+      toast.error("Choisis un programme");
       return;
     }
     setLoading("preview");

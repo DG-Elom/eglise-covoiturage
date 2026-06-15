@@ -31,7 +31,7 @@ export interface TrajetStatsResponse {
     culte: {
       id: string;
       libelle: string;
-      jour_semaine: number;
+      jour_semaine: number | null;
       heure: string;
     } | null;
   };

@@ -58,7 +58,7 @@ export default async function DashboardPage() {
       .select(
         `
         id, depart_adresse, sens, places_total, rayon_detour_km, heure_depart,
-        cultes (libelle, jour_semaine, heure),
+        cultes (libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure),
         trajets_instances (
           id, date, annule_par_conducteur,
           reservations (

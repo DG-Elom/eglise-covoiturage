@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import type { Database } from "@/lib/supabase/types";
-import { formatSens, formatJour, desactiverAbonnement } from "./mes-abonnements.utils";
+import { formatSens, formatJour, desactiverAbonnement, formatProgrammeJour } from "./mes-abonnements.utils";
 
 type Sens = Database["public"]["Tables"]["subscriptions"]["Row"]["sens"];
 
@@ -27,7 +27,10 @@ export type AbonnementAvecTrajet = {
     };
     culte: {
       libelle: string;
-      jour_semaine: number;
+      jour_semaine: number | null;
+      jours_semaine: number[] | null;
+      date_debut: string | null;
+      date_fin: string | null;
     };
   };
 };
@@ -49,7 +52,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
          trajet:trajets!inner (
            heure_depart, depart_adresse,
            conducteur:profiles!trajets_conducteur_id_fkey (prenom, nom, photo_url),
-           culte:cultes!inner (libelle, jour_semaine)
+           culte:cultes!inner (libelle, jour_semaine, jours_semaine, date_debut, date_fin)
          )`,
       )
       .eq("passager_id", userId)
@@ -137,7 +140,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
                       {sub.trajet.conducteur.prenom} {sub.trajet.conducteur.nom}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {sub.trajet.culte.libelle} · {formatJour(sub.trajet.culte.jour_semaine)}
+                      {sub.trajet.culte.libelle} · {formatProgrammeJour(sub.trajet.culte)}
                       {" · "}
                       {sub.trajet.heure_depart.slice(0, 5)}
                     </p>

@@ -8,12 +8,10 @@ import { Loader2, Save, MapPin } from "lucide-react";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Map } from "@/components/map";
 import { getDrivingRoute, type GeocodeResult, type RouteResult } from "@/lib/mapbox";
-import { nextOccurrences, formatDateShort, toDateString } from "@/lib/dates";
+import { nextOccurrences, nextOccurrencesMulti, occurrencesFromRange, formatDateShort, toDateString, formatProgramme } from "@/lib/dates";
 import { addMinutes } from "@/lib/time";
 import { notify } from "@/lib/notify";
 import { confirmToast } from "@/lib/confirm";
-
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
 type Sens = "aller" | "retour" | "aller_retour";
 
@@ -29,7 +27,10 @@ type TrajetProp = {
 
 type CulteProp = {
   libelle: string;
-  jour_semaine: number;
+  jour_semaine: number | null;
+  jours_semaine: number[];
+  date_debut: string | null;
+  date_fin: string | null;
   heure: string;
 };
 
@@ -98,10 +99,18 @@ export function EditTrajetForm({
     () => new Set(existingDateStrings),
   );
 
-  const dates = useMemo(
-    () => nextOccurrences(culte.jour_semaine, 8),
-    [culte.jour_semaine],
-  );
+  const dates = useMemo(() => {
+    if (culte.date_debut && culte.date_fin) {
+      return occurrencesFromRange(culte.date_debut, culte.date_fin);
+    }
+    if (culte.jours_semaine.length > 0) {
+      return nextOccurrencesMulti(culte.jours_semaine, 8);
+    }
+    if (culte.jour_semaine != null) {
+      return nextOccurrences(culte.jour_semaine, 8);
+    }
+    return [];
+  }, [culte.date_debut, culte.date_fin, culte.jours_semaine, culte.jour_semaine]);
 
   // Inclure les dates existantes même si elles ne sont plus dans les 8 prochaines
   const allDateStrings = useMemo(() => {
@@ -324,7 +333,7 @@ export function EditTrajetForm({
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm opacity-80 dark:border-slate-700 dark:bg-slate-950">
           <div className="font-medium text-slate-800 dark:text-slate-200">{culte.libelle}</div>
           <div className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">
-            {JOURS[culte.jour_semaine]} · {culte.heure.slice(0, 5)}
+            {formatProgramme({ jours_semaine: culte.jours_semaine, date_debut: culte.date_debut, date_fin: culte.date_fin, jour_semaine: culte.jour_semaine })} · {culte.heure.slice(0, 5)}
           </div>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             Le programme ne peut pas être modifié sur un trajet existant.

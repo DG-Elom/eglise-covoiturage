@@ -18,7 +18,7 @@ export async function GET() {
        trajet:trajets!inner (
          heure_depart, depart_adresse,
          conducteur:profiles!trajets_conducteur_id_fkey (prenom, nom, photo_url),
-         culte:cultes!inner (libelle, jour_semaine)
+         culte:cultes!inner (libelle, jour_semaine, jours_semaine, date_debut, date_fin)
        )`,
     )
     .eq("passager_id", user.id)

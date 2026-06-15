@@ -5,11 +5,11 @@ export default async function AdminCultesPage() {
   const supabase = await createClient();
   const { data: cultes } = await supabase
     .from("cultes")
-    .select("id, libelle, jour_semaine, heure, actif")
-    .order("jour_semaine");
+    .select("id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure, actif")
+    .order("heure");
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Cultes / Programmes</h1>
+      <h1 className="text-xl font-semibold">Programmes</h1>
       <ProgrammesSection programmes={cultes ?? []} />
     </div>
   );

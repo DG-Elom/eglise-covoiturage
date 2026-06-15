@@ -19,9 +19,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
+import { formatProgramme } from "@/lib/dates";
 import type { TrajetRow } from "./page";
-
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const SENS_LABEL: Record<string, string> = {
   aller: "Aller",
   retour: "Retour",
@@ -292,7 +291,7 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
                   <SortHeader label="Adresse départ" sortKey="depart_adresse" currentSort={currentSort} onToggle={toggleSort} />
                 </th>
                 <th className="px-4 py-3">
-                  <SortHeader label="Culte" sortKey="culte" currentSort={currentSort} onToggle={toggleSort} />
+                  <SortHeader label="Programme" sortKey="culte" currentSort={currentSort} onToggle={toggleSort} />
                 </th>
                 <th className="px-4 py-3">
                   <SortHeader label="Heure départ" sortKey="heure_depart" currentSort={currentSort} onToggle={toggleSort} />
@@ -366,8 +365,13 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
                         <div>
                           <div className="font-medium">{t.culte.libelle}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {JOURS[t.culte.jour_semaine]} ·{" "}
-                            {t.culte.heure.slice(0, 5)}
+                            {formatProgramme({
+                              jours_semaine: t.culte.jours_semaine,
+                              date_debut: t.culte.date_debut,
+                              date_fin: t.culte.date_fin,
+                              jour_semaine: t.culte.jour_semaine,
+                            })}{" "}
+                            · {t.culte.heure.slice(0, 5)}
                           </div>
                         </div>
                       ) : (

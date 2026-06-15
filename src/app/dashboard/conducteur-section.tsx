@@ -30,6 +30,7 @@ import { notify } from "@/lib/notify";
 
 import { confirmToast } from "@/lib/confirm";
 import { humanizeApiError } from "@/lib/errors";
+import { formatProgramme } from "@/lib/dates";
 import { ReportButton } from "@/components/report-button";
 import { OptimizedRouteCard } from "@/components/optimized-route-card";
 import { ConducteurTracking } from "@/components/conducteur-tracking";
@@ -37,7 +38,6 @@ import { RateTripModal } from "@/components/rate-trip-modal";
 import { ProfileRatingBadge } from "@/components/profile-rating-badge";
 import { SendThanksModal } from "@/components/send-thanks-modal";
 
-const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const SENS_LABEL: Record<string, string> = {
   aller: "Aller",
   retour: "Retour",
@@ -51,7 +51,15 @@ export type ConducteurTrajet = {
   places_total: number;
   rayon_detour_km: number;
   heure_depart: string;
-  cultes: { libelle: string; jour_semaine: number; heure: string } | null;
+  cultes: {
+    libelle: string;
+    /** nullable depuis v42 */
+    jour_semaine: number | null;
+    jours_semaine?: number[];
+    date_debut?: string | null;
+    date_fin?: string | null;
+    heure: string;
+  } | null;
   trajets_instances: Array<{
     id: string;
     date: string;
@@ -190,7 +198,12 @@ function TrajetCard({
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-medium">{trajet.cultes?.libelle ?? "—"}</span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {trajet.cultes && JOURS[trajet.cultes.jour_semaine]} ·{" "}
+              {trajet.cultes && formatProgramme({
+                jours_semaine: trajet.cultes.jours_semaine ?? [],
+                date_debut: trajet.cultes.date_debut ?? null,
+                date_fin: trajet.cultes.date_fin ?? null,
+                jour_semaine: trajet.cultes.jour_semaine,
+              })} ·{" "}
               {trajet.cultes?.heure.slice(0, 5)}
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">

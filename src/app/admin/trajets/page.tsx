@@ -20,7 +20,11 @@ export type TrajetRow = {
   culte: {
     id: string;
     libelle: string;
-    jour_semaine: number;
+    /** nullable depuis v42 — null pour les événements */
+    jour_semaine: number | null;
+    jours_semaine: number[];
+    date_debut: string | null;
+    date_fin: string | null;
     heure: string;
   } | null;
   trajets_instances: Array<{
@@ -39,7 +43,7 @@ export default async function AdminTrajetsPage() {
       `id, depart_adresse, sens, places_total, rayon_detour_km,
        heure_depart, actif, created_at,
        conducteur:profiles!trajets_conducteur_id_fkey (id, prenom, nom, photo_url),
-       culte:cultes (id, libelle, jour_semaine, heure),
+       culte:cultes (id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure),
        trajets_instances (id, date, annule_par_conducteur)`,
     )
     .order("created_at", { ascending: false });

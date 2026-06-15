@@ -258,7 +258,7 @@ export function DemandesTable({ demandes }: { demandes: DemandeRow[] }) {
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
                 <th className="py-2.5 pl-4 pr-3">Passager</th>
-                <th className="hidden px-3 py-2.5 sm:table-cell">Culte</th>
+                <th className="hidden px-3 py-2.5 sm:table-cell">Programme</th>
                 <th className="hidden px-3 py-2.5 md:table-cell">Date</th>
                 <th className="hidden px-3 py-2.5 md:table-cell">Sens</th>
                 <th className="hidden px-3 py-2.5 lg:table-cell">Pickup</th>

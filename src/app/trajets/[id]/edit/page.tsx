@@ -26,7 +26,7 @@ export default async function EditTrajetPage({
   const { data: trajet } = await supabase
     .from("trajets")
     .select(
-      "id, depart_adresse, sens, places_total, rayon_detour_km, heure_depart, culte_id, conducteur_id, actif, cultes(libelle, jour_semaine, heure)",
+      "id, depart_adresse, sens, places_total, rayon_detour_km, heure_depart, culte_id, conducteur_id, actif, cultes(libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -39,12 +39,6 @@ export default async function EditTrajetPage({
   ) {
     redirect("/dashboard");
   }
-
-  const { data: cultes } = await supabase
-    .from("cultes")
-    .select("id, libelle, jour_semaine, heure")
-    .eq("actif", true)
-    .order("jour_semaine");
 
   const { data: instances } = await supabase
     .from("trajets_instances")
@@ -93,7 +87,10 @@ export default async function EditTrajetPage({
           }}
           culte={{
             libelle: culte.libelle,
-            jour_semaine: culte.jour_semaine,
+            jour_semaine: culte.jour_semaine ?? null,
+            jours_semaine: (culte as unknown as { jours_semaine?: number[] }).jours_semaine ?? [],
+            date_debut: (culte as unknown as { date_debut?: string | null }).date_debut ?? null,
+            date_fin: (culte as unknown as { date_fin?: string | null }).date_fin ?? null,
             heure: culte.heure,
           }}
           instances={instances ?? []}

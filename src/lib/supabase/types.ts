@@ -101,14 +101,22 @@ export type Database = {
         Row: {
           id: string;
           libelle: string;
-          jour_semaine: number;
+          /** Legacy : 1er jour de jours_semaine pour les récurrents ; null pour les événements */
+          jour_semaine: number | null;
+          jours_semaine: number[];
+          date_debut: string | null;
+          date_fin: string | null;
           heure: string;
           actif: boolean;
           created_at: string;
         };
         Insert: {
           libelle: string;
-          jour_semaine: number;
+          /** Requis uniquement pour la rétrocompatibilité — préférer jours_semaine */
+          jour_semaine?: number | null;
+          jours_semaine?: number[];
+          date_debut?: string | null;
+          date_fin?: string | null;
           heure: string;
           actif?: boolean;
         };

@@ -8,7 +8,7 @@ export type TrajetRaw = {
   places_total: number;
   culte_libelle: string;
   culte_heure: string;
-  culte_jour: number;
+  culte_jour: number | null;
 };
 
 export type TrajetAnonyme = {

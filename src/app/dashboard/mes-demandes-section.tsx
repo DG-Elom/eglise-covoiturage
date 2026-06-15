@@ -17,8 +17,8 @@ export type DemandePassagerRow = {
 };
 
 const SENS_LABEL: Record<DemandePassagerRow["sens"], string> = {
-  aller: "Aller vers le culte",
-  retour: "Retour du culte",
+  aller: "Aller vers le programme",
+  retour: "Retour du programme",
 };
 
 const STATUT_BADGE: Record<

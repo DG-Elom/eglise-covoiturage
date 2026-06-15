@@ -23,9 +23,9 @@ export default async function NouveauTrajetPage() {
 
   const { data: cultes } = await supabase
     .from("cultes")
-    .select("id, libelle, jour_semaine, heure")
+    .select("id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure")
     .eq("actif", true)
-    .order("jour_semaine");
+    .order("heure");
 
   // Position de l'église (ICC Metz). Source : table eglise. Fallback hardcodé.
   const eglisePos = { lat: 49.146943, lng: 6.175955 };

@@ -8,7 +8,7 @@ type RequestBody = {
   dedupKey: string;
 };
 
-const VALID_KINDS: SmsKind[] = ["reminder_2h", "decision"];
+const VALID_KINDS: SmsKind[] = ["reminder_2h", "decision", "weekly_digest"];
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const secret = process.env.INTERNAL_PUSH_SECRET;

@@ -23,9 +23,9 @@ export default async function RecherchePage() {
 
   const { data: cultes } = await supabase
     .from("cultes")
-    .select("id, libelle, jour_semaine, heure")
+    .select("id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure")
     .eq("actif", true)
-    .order("jour_semaine");
+    .order("heure");
 
   const today = new Date().toISOString().slice(0, 10);
 

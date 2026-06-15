@@ -22,7 +22,7 @@ const NAV_ITEMS: Array<{ href: string; label: string; icon: typeof BarChart3 }> 
   { href: "/admin/trajets", label: "Trajets", icon: Car },
   { href: "/admin/reservations", label: "Réservations", icon: Calendar },
   { href: "/admin/demandes", label: "Demandes", icon: Megaphone },
-  { href: "/admin/cultes", label: "Cultes", icon: ShieldCheck },
+  { href: "/admin/cultes", label: "Programmes", icon: ShieldCheck },
   { href: "/admin/signalements", label: "Signalements", icon: AlertOctagon },
   { href: "/admin/bugs", label: "Bugs", icon: Bug },
   { href: "/admin/eglise", label: "Église", icon: Building2 },
