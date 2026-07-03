@@ -45,6 +45,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       count: recipients.length,
       target_label: targetLabelFor(body.filter),
+      // Liste complète des ids résolus : permet à l'UI d'unir un groupe
+      // (ex. "conducteurs sans trajet") à une sélection libre de personnes.
+      ids: recipients.map((r) => r.id),
       sample: recipients.slice(0, 5).map((r) => ({
         id: r.id,
         prenom: r.prenom,

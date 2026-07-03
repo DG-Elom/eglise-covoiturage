@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import type {
   TopConducteur,
@@ -134,9 +136,18 @@ export function TopConducteurs() {
 
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/20">
-      <h2 className="mb-3 text-sm font-semibold text-emerald-900 dark:text-emerald-200">
-        Covoitureurs du mois
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+          Covoitureurs du mois
+        </h2>
+        <Link
+          href="/classement"
+          className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-300"
+        >
+          Classement complet
+          <ChevronRight className="size-3.5" />
+        </Link>
+      </div>
       <div className="flex gap-6">
         {top.map((conducteur, i) => (
           <ConducteurCard

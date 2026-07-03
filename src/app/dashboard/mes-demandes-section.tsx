@@ -1,10 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Trash2, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Trash2, Loader2, Car, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { confirmToast } from "@/lib/confirm";
+
+type DriverSuggestion = {
+  trajet_id: string;
+  distance_km: number;
+  depart_adresse: string;
+  conducteur: { prenom: string; nom: string } | null;
+  culte_id: string;
+  date: string;
+  demande_sens: "aller" | "retour";
+};
+
+/** "1,2 km" en français (virgule décimale). */
+function formatKmFr(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1).replace(".", ",")} km`;
+}
 
 export type DemandePassagerRow = {
   id: string;
@@ -114,11 +131,14 @@ function DemandeItem({ demande }: { demande: DemandePassagerRow }) {
             <MapPin className="size-3 shrink-0" />
             <span className="truncate">{demande.pickup_adresse}</span>
           </div>
+          {demande.statut === "active" && (
+            <NearestDriver demandeId={demande.id} />
+          )}
         </div>
         {demande.statut === "active" && (
           <button
             type="button"
-            onClick={annuler}
+            onClick={() => void annuler()}
             disabled={busy}
             aria-label="Annuler cette demande"
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-red-950/40"
@@ -132,5 +152,68 @@ function DemandeItem({ demande }: { demande: DemandePassagerRow }) {
         )}
       </div>
     </li>
+  );
+}
+
+/**
+ * Suggère au passager le conducteur compatible le plus proche pour une demande active.
+ * Charge la suggestion à la volée via l'API et propose un lien pour réserver.
+ */
+function NearestDriver({ demandeId }: { demandeId: string }) {
+  const [loading, setLoading] = useState(true);
+  const [best, setBest] = useState<DriverSuggestion | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`/api/demandes/${demandeId}/suggestions`);
+        if (!res.ok) return;
+        const json = (await res.json()) as { suggestions?: DriverSuggestion[] };
+        if (!cancelled) setBest(json.suggestions?.[0] ?? null);
+      } catch {
+        // suggestion non bloquante : on reste silencieux en cas d'échec réseau
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [demandeId]);
+
+  if (loading) {
+    return (
+      <div className="mt-2 flex items-center gap-1 text-xs text-slate-400">
+        <Loader2 className="size-3 shrink-0 animate-spin" />
+        <span>Recherche d&apos;un conducteur…</span>
+      </div>
+    );
+  }
+
+  if (!best) return null;
+
+  const nom = best.conducteur
+    ? `${best.conducteur.prenom} ${best.conducteur.nom}`.trim()
+    : "Un conducteur";
+
+  return (
+    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-2 dark:border-emerald-800/60 dark:bg-emerald-950/20">
+      <div className="flex items-center gap-1.5 text-xs text-emerald-800 dark:text-emerald-200">
+        <Car className="size-3.5 shrink-0" />
+        <span className="min-w-0 truncate">
+          Conducteur le plus proche : <span className="font-medium">{nom}</span>{" "}
+          · {formatKmFr(best.distance_km)}
+        </span>
+      </div>
+      <Link
+        href={`/trajets/recherche?culte=${best.culte_id}&date=${best.date}&sens=${best.demande_sens}`}
+        className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
+      >
+        Réserver
+        <ArrowRight className="size-3" />
+      </Link>
+    </div>
   );
 }
