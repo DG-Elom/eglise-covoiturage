@@ -23,7 +23,9 @@ export default async function NouveauTrajetPage() {
 
   const { data: cultes } = await supabase
     .from("cultes")
-    .select("id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure")
+    .select(
+      "id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure, destination_adresse, destination_position",
+    )
     .eq("actif", true)
     .order("heure");
 

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Power, Loader2, Save, Pencil } from "lucide-react";
+import { Plus, Trash2, Power, Loader2, Save, Pencil, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { confirmToast } from "@/lib/confirm";
 import { formatProgramme } from "@/lib/dates";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import type { GeocodeResult } from "@/lib/mapbox";
 
 const JOURS_LONG = [
   "Dimanche",
@@ -28,9 +30,38 @@ type Programme = {
   date_fin: string | null;
   heure: string;
   actif: boolean;
+  /** null → le trajet route vers l'église globale */
+  destination_adresse: string | null;
+  /** GeoJSON Point renvoyé par Supabase (geography) */
+  destination_position: unknown;
 };
 
 type Mode = "recurrent" | "evenement";
+
+/** Extrait { lng, lat } d'un Point GeoJSON renvoyé par une colonne geography. */
+function parsePoint(raw: unknown): { lng: number; lat: number } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const coords = (raw as { coordinates?: unknown }).coordinates;
+  if (!Array.isArray(coords)) return null;
+  const [lng, lat] = coords;
+  if (typeof lng !== "number" || typeof lat !== "number") return null;
+  return { lng, lat };
+}
+
+/** Reconstruit un GeocodeResult depuis les colonnes destination d'un programme. */
+function destinationToResult(p: Programme): GeocodeResult | null {
+  const pt = parsePoint(p.destination_position);
+  if (!p.destination_adresse || !pt) return null;
+  return { id: p.id, address: p.destination_adresse, lat: pt.lat, lng: pt.lng };
+}
+
+/** Colonnes destination à écrire depuis un GeocodeResult (ou null si effacé). */
+function destinationPayload(dest: GeocodeResult | null) {
+  return {
+    destination_adresse: dest ? dest.address : null,
+    destination_position: dest ? `POINT(${dest.lng} ${dest.lat})` : null,
+  };
+}
 
 export function ProgrammesSection({ programmes }: { programmes: Programme[] }) {
   const [adding, setAdding] = useState(false);
@@ -78,6 +109,7 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
   const [heure, setHeure] = useState("09:00");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
+  const [dest, setDest] = useState<GeocodeResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   function toggleJour(j: number) {
@@ -121,6 +153,7 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
             date_debut: null,
             date_fin: null,
             heure,
+            ...destinationPayload(dest),
           }
         : {
             libelle: libelle.trim(),
@@ -129,6 +162,7 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
             date_debut: dateDebut,
             date_fin: dateFin,
             heure,
+            ...destinationPayload(dest),
           };
 
     const { error } = await supabase.from("cultes").insert(payload as never);
@@ -181,6 +215,9 @@ function NewRow({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => vo
         />
       </div>
 
+      {/* Destination */}
+      <DestinationField value={dest} onChange={setDest} />
+
       {/* Actions */}
       <div className="flex justify-end gap-1">
         <button
@@ -222,6 +259,7 @@ function Row({ programme }: { programme: Programme }) {
   const [heure, setHeure] = useState(programme.heure.slice(0, 5));
   const [dateDebut, setDateDebut] = useState(programme.date_debut ?? "");
   const [dateFin, setDateFin] = useState(programme.date_fin ?? "");
+  const [dest, setDest] = useState<GeocodeResult | null>(() => destinationToResult(programme));
   const [loading, setLoading] = useState(false);
 
   function toggleJour(j: number) {
@@ -261,6 +299,7 @@ function Row({ programme }: { programme: Programme }) {
             date_debut: null,
             date_fin: null,
             heure,
+            ...destinationPayload(dest),
           }
         : {
             libelle: libelle.trim(),
@@ -269,6 +308,7 @@ function Row({ programme }: { programme: Programme }) {
             date_debut: dateDebut,
             date_fin: dateFin,
             heure,
+            ...destinationPayload(dest),
           };
 
     const { error } = await supabase
@@ -362,6 +402,8 @@ function Row({ programme }: { programme: Programme }) {
           />
         </div>
 
+        <DestinationField value={dest} onChange={setDest} />
+
         <div className="flex justify-end gap-1">
           <button
             type="button"
@@ -409,6 +451,12 @@ function Row({ programme }: { programme: Programme }) {
         <div className="text-xs text-slate-500 dark:text-slate-400">
           {displayJour} · {programme.heure.slice(0, 5)}
         </div>
+        <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+          <MapPin className="size-3 shrink-0" />
+          <span className="truncate">
+            {programme.destination_adresse ?? "Église par défaut"}
+          </span>
+        </div>
       </button>
       <div className="flex items-center gap-1">
         <button
@@ -445,6 +493,39 @@ function Row({ programme }: { programme: Programme }) {
 }
 
 // ─── Composants helpers ───────────────────────────────────────────────────────
+
+function DestinationField({
+  value,
+  onChange,
+}: {
+  value: GeocodeResult | null;
+  onChange: (r: GeocodeResult | null) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-xs text-slate-600 dark:text-slate-400">
+        Destination{" "}
+        <span className="text-slate-400 dark:text-slate-500">
+          (optionnel — vide = église par défaut)
+        </span>
+      </label>
+      <AddressAutocomplete
+        value={value}
+        onChange={onChange}
+        placeholder="Adresse du lieu de ce programme"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="text-xs text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        >
+          Effacer la destination (revenir à l&apos;église)
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
   return (

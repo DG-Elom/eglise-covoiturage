@@ -34,6 +34,8 @@ type Culte = {
   date_debut: string | null;
   date_fin: string | null;
   heure: string;
+  destination_adresse: string | null;
+  destination_position: unknown;
 };
 
 type Sens = "aller" | "retour" | "aller_retour";
@@ -83,6 +85,24 @@ export function NouveauTrajetForm({
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
 
+  const culte = cultes.find((c) => c.id === culteId);
+
+  // Destination effective : celle du programme si définie, sinon l'église globale.
+  const destination = useMemo(() => {
+    const raw = culte?.destination_position;
+    if (raw && typeof raw === "object") {
+      const coords = (raw as { coordinates?: unknown }).coordinates;
+      if (Array.isArray(coords)) {
+        const [lng, lat] = coords;
+        if (typeof lng === "number" && typeof lat === "number") {
+          return { lat, lng };
+        }
+      }
+    }
+    return eglisePos;
+  }, [culte, eglisePos]);
+  const destinationLabel = culte?.destination_adresse ? "Destination" : "Église";
+
   useEffect(() => {
     if (!adresse) {
       setRoute(null);
@@ -92,7 +112,7 @@ export function NouveauTrajetForm({
     setRouteLoading(true);
     getDrivingRoute(
       { lat: adresse.lat, lng: adresse.lng },
-      eglisePos,
+      destination,
     )
       .then((r) => {
         if (!cancelled) setRoute(r);
@@ -106,8 +126,7 @@ export function NouveauTrajetForm({
     return () => {
       cancelled = true;
     };
-  }, [adresse, eglisePos]);
-  const culte = cultes.find((c) => c.id === culteId);
+  }, [adresse, destination]);
   const dates = useMemo(
     () => {
       if (!culte) return [];
@@ -353,7 +372,7 @@ export function NouveauTrajetForm({
               zoom={13}
               markers={[
                 { lat: adresse.lat, lng: adresse.lng, label: "Départ" },
-                { lat: eglisePos.lat, lng: eglisePos.lng, label: "Église", color: "#a855f7" },
+                { lat: destination.lat, lng: destination.lng, label: destinationLabel, color: "#a855f7" },
               ]}
               route={
                 route

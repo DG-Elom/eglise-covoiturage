@@ -5,7 +5,9 @@ export default async function AdminCultesPage() {
   const supabase = await createClient();
   const { data: cultes } = await supabase
     .from("cultes")
-    .select("id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure, actif")
+    .select(
+      "id, libelle, jour_semaine, jours_semaine, date_debut, date_fin, heure, actif, destination_adresse, destination_position",
+    )
     .order("heure");
   return (
     <div className="space-y-6">

@@ -109,6 +109,9 @@ export type Database = {
           heure: string;
           actif: boolean;
           created_at: string;
+          /** null → le trajet route vers l'église globale */
+          destination_adresse: string | null;
+          destination_position: unknown;
         };
         Insert: {
           libelle: string;
@@ -119,6 +122,8 @@ export type Database = {
           date_fin?: string | null;
           heure: string;
           actif?: boolean;
+          destination_adresse?: string | null;
+          destination_position?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["cultes"]["Insert"]>;
         Relationships: [];
