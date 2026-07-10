@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Calendar, Search, Check, X, Trash2 } from "lucide-react";
+import { Calendar, Search, Check, X, Trash2, Ban } from "lucide-react";
+import { humanizeApiError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
@@ -101,44 +102,72 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
     return true;
   });
 
-  async function forceStatut(
-    id: string,
-    statut: "accepted" | "refused" | "cancelled",
-  ) {
-    const label =
-      statut === "accepted" ? "Forcer acceptée" :
-      statut === "refused" ? "Forcer refusée" :
-      "Forcer annulée";
+  async function forceStatut(id: string, statut: "accepted" | "refused") {
+    const label = statut === "accepted" ? "Forcer acceptée" : "Forcer refusée";
 
     const ok = await confirmToast(`${label} cette réservation ?`, {
       confirmLabel: label,
       cancelLabel: "Annuler",
-      destructive: statut !== "accepted",
+      destructive: statut === "refused",
     });
     if (!ok) return;
 
     setLoadingId(id);
     const supabase = createClient();
     const now = new Date().toISOString();
-    const patch =
-      statut === "accepted"
-        ? { statut, traitee_le: now }
-        : statut === "refused"
-        ? { statut, traitee_le: now }
-        : { statut, cancelled_le: now };
-
     const { error } = await supabase
       .from("reservations")
-      .update(patch as never)
+      .update({ statut, traitee_le: now } as never)
       .eq("id", id);
     setLoadingId(null);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success(`Statut mis à jour : ${STATUT_LABEL[statut]}`);
     router.refresh();
+  }
+
+  // Annulation admin : passe par /api/admin/reservations/[id]/cancel qui :
+  // - pose motif_refus = annulee_par_admin (vs annulation passager : null)
+  // - notifie le passager (sa demande est annulee)
+  // - notifie le conducteur si resa etait active (place liberee)
+  async function annulerAdmin(id: string) {
+    const ok = await confirmToast(
+      "Annuler cette réservation ? Le passager et le conducteur seront notifiés.",
+      {
+        confirmLabel: "Annuler la réservation",
+        cancelLabel: "Retour",
+        destructive: true,
+      },
+    );
+    if (!ok) return;
+
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/admin/reservations/${id}/cancel`, {
+        method: "POST",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (res.ok && data.ok) {
+        toast.success("Réservation annulée. Notifications envoyées.");
+        router.refresh();
+        return;
+      }
+      if (data.error === "already_cancelled") {
+        toast.info("Cette réservation est déjà annulée.");
+        return;
+      }
+      toast.error(humanizeApiError(data.error));
+    } catch {
+      toast.error("Problème de connexion. Réessaie.");
+    } finally {
+      setLoadingId(null);
+    }
   }
 
   async function supprimer(id: string) {
@@ -155,7 +184,7 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
     setLoadingId(null);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(humanizeApiError(error));
       return;
     }
     toast.success("Réservation supprimée");
@@ -320,12 +349,12 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
                         </button>
                         <button
                           type="button"
-                          title="Forcer annulée"
+                          title="Annuler la réservation (notifie passager + conducteur)"
                           disabled={isLoading}
-                          onClick={() => forceStatut(r.id, "cancelled")}
-                          className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 transition dark:hover:bg-slate-800"
+                          onClick={() => annulerAdmin(r.id)}
+                          className="rounded p-1 text-amber-600 hover:bg-amber-50 disabled:opacity-40 transition dark:text-amber-400 dark:hover:bg-amber-950/40"
                         >
-                          <span className="text-[10px] font-medium">Annul.</span>
+                          <Ban className="size-4" />
                         </button>
                         <button
                           type="button"
