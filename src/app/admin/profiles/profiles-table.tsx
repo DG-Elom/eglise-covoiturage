@@ -13,7 +13,9 @@ import {
   Ban,
   CheckCircle2,
   Trash2,
+  MessageSquareText,
 } from "lucide-react";
+import { SendSmsDialog } from "./send-sms-dialog";
 
 export type Profile = {
   id: string;
@@ -58,6 +60,7 @@ function ProfileRow({ profile }: { profile: Profile }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [smsOpen, setSmsOpen] = useState(false);
 
   async function toggleSuspend() {
     if (!profile.suspended) {
@@ -213,6 +216,15 @@ function ProfileRow({ profile }: { profile: Profile }) {
         <div className="flex items-center justify-end gap-1">
           <button
             type="button"
+            onClick={() => setSmsOpen(true)}
+            disabled={busy}
+            title={`Envoyer un SMS à ${profile.prenom}`}
+            className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-40 dark:text-slate-500 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
+          >
+            <MessageSquareText className="size-4" />
+          </button>
+          <button
+            type="button"
             onClick={toggleSuspend}
             disabled={busy}
             title={profile.suspended ? "Réactiver" : "Suspendre"}
@@ -255,6 +267,15 @@ function ProfileRow({ profile }: { profile: Profile }) {
             <Trash2 className="size-4" />
           </button>
         </div>
+        {/* Dialog en fixed inset-0, sort du flux de la cellule */}
+        {smsOpen && (
+          <SendSmsDialog
+            userId={profile.id}
+            prenom={profile.prenom}
+            nom={profile.nom}
+            onClose={() => setSmsOpen(false)}
+          />
+        )}
       </td>
     </tr>
   );
