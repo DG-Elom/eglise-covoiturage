@@ -82,6 +82,7 @@ export default async function InactiveConducteursPage() {
               className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >
               <Avatar
+                userId={p.id}
                 photoUrl={p.photo_url}
                 prenom={p.prenom}
                 nom={p.nom}

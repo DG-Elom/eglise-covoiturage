@@ -184,6 +184,7 @@ function BugCard({ bug, myPrenom }: { bug: BugReportRow; myPrenom: string }) {
           <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             {bug.auteur && (
               <Avatar
+                userId={bug.auteur.id}
                 photoUrl={bug.auteur.photo_url}
                 prenom={bug.auteur.prenom}
                 nom={bug.auteur.nom}

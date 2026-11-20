@@ -266,6 +266,7 @@ function TopConducteurs({
             {idx + 1}
           </span>
           <Avatar
+            userId={c.id}
             photoUrl={c.photo_url}
             prenom={c.prenom}
             nom={c.nom}

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Size = "xs" | "sm" | "md" | "lg";
 
 const SIZE_CLASS: Record<Size, string> = {
@@ -13,19 +15,43 @@ function initiales(prenom?: string | null, nom?: string | null): string {
   return (p + n).toUpperCase() || "?";
 }
 
+/**
+ * Avatar d'un membre. Avec `userId`, l'avatar mène au profil `/u/[id]`
+ * (infos publiques pour tous, contact et activité en plus pour l'admin).
+ * Ne pas passer `userId` quand l'avatar est déjà dans un lien ou un bouton.
+ */
 export function Avatar({
-  photoUrl,
-  prenom,
-  nom,
-  size = "md",
-  className = "",
-}: {
+  userId,
+  ...props
+}: AvatarProps & { userId?: string | null }) {
+  if (!userId) return <AvatarImage {...props} />;
+  const nomComplet = `${props.prenom ?? ""} ${props.nom ?? ""}`.trim();
+  return (
+    <Link
+      href={`/u/${userId}`}
+      title={nomComplet ? `Voir le profil de ${nomComplet}` : "Voir le profil"}
+      className="inline-flex shrink-0 rounded-full outline-none transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-emerald-500"
+    >
+      <AvatarImage {...props} />
+    </Link>
+  );
+}
+
+type AvatarProps = {
   photoUrl?: string | null;
   prenom?: string | null;
   nom?: string | null;
   size?: Size;
   className?: string;
-}) {
+};
+
+function AvatarImage({
+  photoUrl,
+  prenom,
+  nom,
+  size = "md",
+  className = "",
+}: AvatarProps) {
   const sizeCls = SIZE_CLASS[size];
   if (photoUrl) {
     return (

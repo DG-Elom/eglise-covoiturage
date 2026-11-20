@@ -153,6 +153,7 @@ function SignalementCard({ signalement }: { signalement: SignalementRow }) {
             <span className="inline-flex items-center gap-1">
               {signalement.auteur && (
                 <Avatar
+                  userId={signalement.auteur.id}
                   photoUrl={signalement.auteur.photo_url}
                   prenom={signalement.auteur.prenom}
                   nom={signalement.auteur.nom}
@@ -167,6 +168,7 @@ function SignalementCard({ signalement }: { signalement: SignalementRow }) {
             <span className="inline-flex items-center gap-1">
               {signalement.cible && (
                 <Avatar
+                  userId={signalement.cible.id}
                   photoUrl={signalement.cible.photo_url}
                   prenom={signalement.cible.prenom}
                   nom={signalement.cible.nom}

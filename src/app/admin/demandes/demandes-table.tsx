@@ -122,6 +122,7 @@ function DemandeRow({ demande }: { demande: DemandeRow }) {
         <div className="flex items-center gap-2">
           {demande.passager && (
             <Avatar
+              userId={demande.passager.id}
               photoUrl={demande.passager.photo_url}
               prenom={demande.passager.prenom}
               nom={demande.passager.nom}
@@ -133,6 +134,14 @@ function DemandeRow({ demande }: { demande: DemandeRow }) {
               {demande.passager
                 ? `${demande.passager.prenom} ${demande.passager.nom}`
                 : "—"}
+            </div>
+            <div className="text-xs text-slate-500 md:hidden dark:text-slate-400">
+              {demande.culte?.libelle ?? "—"}
+              {demande.culte?.heure ? ` ${demande.culte.heure.slice(0, 5)}` : ""} ·{" "}
+              {formatDate(demande.date)} · {SENS_LABEL[demande.sens]}
+            </div>
+            <div className="text-[11px] text-slate-400 md:hidden dark:text-slate-500">
+              Demandée le {formatDate(demande.created_at)}
             </div>
           </div>
         </div>

@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Calendar, Search, Check, X, Trash2 } from "lucide-react";
+import { Calendar, Search, Check, X, Trash2, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@/components/avatar";
 import { confirmToast } from "@/lib/confirm";
+import { ReservationDetailDialog } from "./reservation-detail-dialog";
 
 const STATUT_BADGE: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
@@ -87,6 +88,8 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
   const [statutFilter, setStatutFilter] = useState<StatutFilter>("all");
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detail = reservations.find((r) => r.id === detailId) ?? null;
 
   const filtered = reservations.filter((r) => {
     if (statutFilter !== "all" && r.statut !== statutFilter) return false;
@@ -226,11 +229,17 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
                 return (
                   <tr
                     key={r.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    onClick={(e) => {
+                      // Les boutons et liens de la ligne gardent leur propre action.
+                      if ((e.target as HTMLElement).closest("button, a")) return;
+                      setDetailId(r.id);
+                    }}
+                    className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         <Avatar
+                          userId={r.passager?.id}
                           photoUrl={r.passager?.photo_url}
                           prenom={r.passager?.prenom}
                           nom={r.passager?.nom}
@@ -246,6 +255,7 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
                       {conducteur ? (
                         <div className="flex items-center gap-2 whitespace-nowrap">
                           <Avatar
+                            userId={conducteur.id}
                             photoUrl={conducteur.photo_url}
                             prenom={conducteur.prenom}
                             nom={conducteur.nom}
@@ -302,6 +312,15 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
+                          title="Détails"
+                          aria-label="Voir le détail de la réservation"
+                          onClick={() => setDetailId(r.id)}
+                          className="rounded p-1 text-slate-600 hover:bg-slate-100 transition dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button
+                          type="button"
                           title="Forcer acceptée"
                           disabled={isLoading}
                           onClick={() => forceStatut(r.id, "accepted")}
@@ -344,6 +363,65 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
             </tbody>
           </table>
         </div>
+      )}
+
+      {detail && (
+        <ReservationDetailDialog
+          key={detail.id}
+          reservation={detail}
+          onClose={() => setDetailId(null)}
+          actions={
+            <>
+              <button
+                type="button"
+                disabled={loadingId === detail.id}
+                onClick={() => {
+                  // La confirmation (toast) doit rester cliquable : on ferme la fenêtre d'abord.
+                  setDetailId(null);
+                  void forceStatut(detail.id, "accepted");
+                }}
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+              >
+                Forcer acceptée
+              </button>
+              <button
+                type="button"
+                disabled={loadingId === detail.id}
+                onClick={() => {
+                  // La confirmation (toast) doit rester cliquable : on ferme la fenêtre d'abord.
+                  setDetailId(null);
+                  void forceStatut(detail.id, "refused");
+                }}
+                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-900 dark:hover:bg-red-950/40"
+              >
+                Forcer refusée
+              </button>
+              <button
+                type="button"
+                disabled={loadingId === detail.id}
+                onClick={() => {
+                  // La confirmation (toast) doit rester cliquable : on ferme la fenêtre d'abord.
+                  setDetailId(null);
+                  void forceStatut(detail.id, "cancelled");
+                }}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Forcer annulée
+              </button>
+              <button
+                type="button"
+                disabled={loadingId === detail.id}
+                onClick={() => {
+                  setDetailId(null);
+                  void supprimer(detail.id);
+                }}
+                className="ml-auto rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:hover:bg-red-950/40"
+              >
+                Supprimer
+              </button>
+            </>
+          }
+        />
       )}
 
       <p className="text-xs text-slate-400 dark:text-slate-500">

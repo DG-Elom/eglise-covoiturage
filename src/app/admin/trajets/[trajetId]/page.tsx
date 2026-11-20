@@ -252,6 +252,7 @@ export default async function TrajetDetailPage({
       <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-wrap items-start gap-4">
           <Avatar
+            userId={conducteur?.id}
             photoUrl={conducteur?.photo_url}
             prenom={conducteur?.prenom}
             nom={conducteur?.nom}
@@ -416,6 +417,7 @@ export default async function TrajetDetailPage({
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
                             <Avatar
+                              userId={p.id}
                               photoUrl={p.photo_url}
                               prenom={p.prenom}
                               nom={p.nom}
@@ -468,6 +470,7 @@ export default async function TrajetDetailPage({
                 return (
                   <div key={p.id} className="flex items-center gap-3 px-5 py-3">
                     <Avatar
+                      userId={p.id}
                       photoUrl={p.photo_url}
                       prenom={p.prenom}
                       nom={p.nom}

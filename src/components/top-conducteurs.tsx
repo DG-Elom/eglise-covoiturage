@@ -91,6 +91,7 @@ function ConducteurCard({
         {medal}
       </span>
       <Avatar
+        userId={conducteur.id}
         photoUrl={conducteur.photoUrl}
         prenom={conducteur.prenom}
         nom={conducteur.nom}

@@ -610,6 +610,7 @@ function ReservationRow({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex items-start gap-2">
           <Avatar
+            userId={passager.id}
             photoUrl={passager.photo_url}
             prenom={passager.prenom}
             nom={passager.nom}

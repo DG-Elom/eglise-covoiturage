@@ -21,6 +21,7 @@ export type AbonnementAvecTrajet = {
     heure_depart: string;
     depart_adresse: string;
     conducteur: {
+      id: string;
       prenom: string;
       nom: string;
       photo_url: string | null;
@@ -51,7 +52,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
         `id, trajet_id, sens, pickup_adresse, actif, created_at,
          trajet:trajets!inner (
            heure_depart, depart_adresse,
-           conducteur:profiles!trajets_conducteur_id_fkey (prenom, nom, photo_url),
+           conducteur:profiles!trajets_conducteur_id_fkey (id, prenom, nom, photo_url),
            culte:cultes!inner (libelle, jour_semaine, jours_semaine, date_debut, date_fin)
          )`,
       )
@@ -130,6 +131,7 @@ export function MesAbonnements({ userId }: { userId: string }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <Avatar
+                    userId={sub.trajet.conducteur.id}
                     photoUrl={sub.trajet.conducteur.photo_url}
                     prenom={sub.trajet.conducteur.prenom}
                     nom={sub.trajet.conducteur.nom}
