@@ -100,6 +100,7 @@ export function TrajetsDisponibles({
             >
               <div className="flex items-start gap-3">
                 <Avatar
+                  userId={inst.trajet.conducteur.id}
                   photoUrl={inst.trajet.conducteur.photo_url}
                   prenom={inst.trajet.conducteur.prenom}
                   nom={inst.trajet.conducteur.nom}

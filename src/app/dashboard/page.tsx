@@ -17,6 +17,8 @@ import {
   type DemandeProcheRow,
 } from "./demandes-proches-section";
 import { TopConducteurs } from "@/components/top-conducteurs";
+import { distanceDepuisDepartsKm, type DepartConducteur } from "@/lib/demande-distance";
+import { extractCoords } from "@/app/api/admin/map-data/_logic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -148,20 +150,52 @@ export default async function DashboardPage() {
 
   let demandesProches: DemandeProcheRow[] = [];
   if (peutConduire) {
-    const { data } = await supabase
-      .from("demandes_passager")
-      .select(
-        `id, date, sens, pickup_adresse, notes, created_at,
-         passager:profiles!demandes_passager_passager_id_fkey (
-           id, prenom, nom, photo_url
-         ),
-         culte:cultes (id, libelle, heure)`,
-      )
-      .eq("statut", "active")
-      .gte("date", today)
-      .neq("passager_id", user.id)
-      .order("date", { ascending: true });
-    demandesProches = (data ?? []) as unknown as DemandeProcheRow[];
+    const [{ data }, { data: departsData }] = await Promise.all([
+      supabase
+        .from("demandes_passager")
+        .select(
+          `id, date, sens, pickup_adresse, pickup_position, notes, created_at,
+           passager:profiles!demandes_passager_passager_id_fkey (
+             id, prenom, nom, photo_url
+           ),
+           culte:cultes (id, libelle, heure)`,
+        )
+        .eq("statut", "active")
+        .gte("date", today)
+        .neq("passager_id", user.id)
+        .order("date", { ascending: true }),
+      supabase
+        .from("trajets")
+        .select("culte_id, sens, depart_position")
+        .eq("conducteur_id", user.id)
+        .eq("actif", true),
+    ]);
+    const departs: DepartConducteur[] = (
+      (departsData ?? []) as unknown as {
+        culte_id: string;
+        sens: DepartConducteur["sens"];
+        depart_position: unknown;
+      }[]
+    ).map((t) => ({
+      culte_id: t.culte_id,
+      sens: t.sens,
+      position: extractCoords(t.depart_position),
+    }));
+    demandesProches = (
+      (data ?? []) as unknown as (Omit<DemandeProcheRow, "distance"> & {
+        pickup_position: unknown;
+      })[]
+    ).map(({ pickup_position, ...d }) => ({
+      ...d,
+      distance: distanceDepuisDepartsKm(
+        {
+          position: extractCoords(pickup_position),
+          culte_id: d.culte?.id ?? null,
+          sens: d.sens,
+        },
+        departs,
+      ),
+    }));
   }
 
   let mesReservations: PassagerReservation[] = [];

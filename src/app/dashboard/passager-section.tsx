@@ -206,6 +206,7 @@ function ReservationCard({
           <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2 dark:bg-emerald-950/40 dark:border-emerald-800">
             <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
               <Avatar
+                userId={conducteur.id}
                 photoUrl={conducteur.photo_url}
                 prenom={conducteur.prenom}
                 nom={conducteur.nom}

@@ -638,6 +638,7 @@ function TrajetItem({
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Avatar
+              userId={trajet.conducteur_id}
               photoUrl={trajet.conducteur_photo_url}
               prenom={trajet.conducteur_prenom}
               nom=""
@@ -735,6 +736,7 @@ function InstanceFullDialog({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Avatar
+                      userId={alt.conducteur_id}
                       photoUrl={alt.conducteur_photo_url}
                       prenom={alt.conducteur_prenom}
                       nom=""

@@ -340,6 +340,7 @@ export function TrajetsTable({ trajets }: { trajets: TrajetRow[] }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Avatar
+                          userId={t.conducteur?.id}
                           photoUrl={t.conducteur?.photo_url}
                           prenom={t.conducteur?.prenom}
                           nom={t.conducteur?.nom}

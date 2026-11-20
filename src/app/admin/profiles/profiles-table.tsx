@@ -165,6 +165,7 @@ function ProfileRow({ profile }: { profile: Profile }) {
       <td className="py-3 pl-4 pr-3">
         <div className="flex items-center gap-3">
           <Avatar
+            userId={profile.id}
             photoUrl={profile.photo_url}
             prenom={profile.prenom}
             nom={profile.nom}
